@@ -2,8 +2,11 @@ package ml
 
 import (
     "testing"
+    "fmt"
 )
 
+// Using a predefined dataset stored in test_data/test_logistic.dat , calculate
+// the cost and gradient for different lambda y theta
 func TestLinearRegCostFunction(t *testing.T) {
 
     // Data obtained from the "Andrew Ng" machine learning course from Coursera
@@ -50,4 +53,14 @@ func TestLinearRegCostFunction(t *testing.T) {
             }
         }
     }
+}
+
+func TestCalculateOptimumData(t *testing.T) {
+
+    // Data obtained from the "Andrew Ng" machine learning course from Coursera
+    // https://www.coursera.org/course/ml
+    //data := LoadFile("test_data/test_logistic_polynomial.dat")
+    data := LoadFile("test_data/test_logistic.dat")
+
+    fmt.Println("Lambda", data.CalcOptimumLambdaTheta())
 }

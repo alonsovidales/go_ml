@@ -72,6 +72,83 @@ func (data *DataSet) LinearRegCostFunction(theta []float64, lambda float64) (j f
     return
 }
 
+func (data *DataSet) MinimizeTheta(initTheta []float64, lambda float64, maxIters int) (theta []float64) {
+    theta = initTheta
+
+    fmt.Println("LAMBDA:", lambda)
+    // TODO: Try to get the optimal aplha
+    alpha := 0.001
+
+    jTraining, _, err := data.LinearRegCostFunction(theta, lambda)
+    if err != nil { panic(err) }
+    lastJ := jTraining + 1
+
+    for iter := 0; iter < maxIters; iter++ {
+        jTraining, grad, err := data.LinearRegCostFunction(theta, lambda)
+        if err != nil { panic(err) }
+
+        if jTraining > lastJ {
+            fmt.Println("Reduce ALPHA!!!", alpha)
+            alpha /= 10
+        } else {
+            fmt.Println("J:", jTraining)
+            fmt.Println("Theta:", theta)
+            fmt.Println("Grad:", grad)
+            fmt.Println("------ ------")
+
+            for j := 0; j < len(theta); j++ {
+                theta[j] -= alpha * grad[j]
+            }
+
+            if lastJ - jTraining < 0.001 {
+                fmt.Println("Found Perfct Match!!!!!")
+                return
+            }
+
+            lastJ = jTraining
+        }
+    }
+
+    return
+}
+
+func (data *DataSet) CalcOptimumLambdaTheta() (lambda float64) {
+    //lambdas := []float64{0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10}
+
+    // Get the 60% of the data as training data, 20% as cross validation, and
+    // the remaining 20% as test data
+    training := int64(float64(len(data.X)) * 0.6)
+    cv := int64(float64(len(data.X)) * 0.8)
+
+    trainingData := &DataSet{
+        X: data.X[:training],
+        Y: data.Y[:training],
+    }
+    cvData := &DataSet{
+        X: data.X[training:cv],
+        Y: data.Y[training:cv],
+    }
+    testData := &DataSet{
+        X: data.X[cv:],
+        Y: data.Y[cv:],
+    }
+
+    fmt.Println("Training:", trainingData.X)
+    fmt.Println("CV:", cvData.X)
+    fmt.Println("Test:", testData.X)
+
+    trainingData.MinimizeTheta(make([]float64, len(trainingData.X[0])), 0, 20000)
+    //for _, posLambda := range lambdas {
+    //    trainingData.MinimizeTheta(make([]float64, len(trainingData.X[0])), posLambda, 10)
+        /*jTraining, _, err := data.LinearRegCostFunction(theta, posLambda)
+        jCv, _, err := data.LinearRegCostFunction(theta, posLambda)
+        if err != nil { panic(err) }
+        fmt.Println(j)*/
+    //}
+
+    return
+}
+
 // Loads information from the local file located at filePath, and after parse
 // it, returns the DataSet ready to be used with all the information loaded
 // The file format is:
