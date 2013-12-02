@@ -2,7 +2,6 @@ package ml
 
 import (
     "testing"
-    "fmt"
 )
 
 // Using a predefined dataset stored in test_data/test_logistic.dat , calculate
@@ -59,8 +58,33 @@ func TestCalculateOptimumData(t *testing.T) {
 
     // Data obtained from the "Andrew Ng" machine learning course from Coursera
     // https://www.coursera.org/course/ml
-    //data := LoadFile("test_data/test_logistic_polynomial.dat")
-    data := LoadFile("test_data/test_logistic.dat")
+    data := LoadFile("test_data/test_logistic_polynomial.dat")
 
-    fmt.Println("Lambda", data.CalcOptimumLambdaTheta())
+    lambda, theta, performance := data.CalcOptimumLambdaTheta(2000, false)
+
+    if (performance != 4.720931077222739) {
+        t.Error("The expected performance is: 4.720931077222739 but the returned value is:", performance)
+    }
+
+    if (lambda != 0.01) {
+        t.Error("The expected lambda is: 0.1 but the returned value is:", lambda)
+    }
+
+    expectedTheta := []float64{
+        11.600497233712602,
+        8.457034058625915,
+        5.121089248288871,
+        3.702976145326119,
+        2.6521200466209134,
+        1.4601346022472674,
+        0.7517304315857527,
+        0.2385277594908083,
+        -0.3243681654026378,
+    }
+
+    for i := 0; i < len(expectedTheta); i++ {
+        if (theta[i] != expectedTheta[i]) {
+            t.Error("The expected theta value on", i, " is:", expectedTheta[i], "but the returned value was:", theta[i])
+        }
+    }
 }

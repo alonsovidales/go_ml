@@ -6,6 +6,8 @@ import (
     "io/ioutil"
     "strings"
     "strconv"
+    "math/rand"
+    "time"
 )
 
 type DataSet struct {
@@ -58,7 +60,7 @@ func (data *DataSet) LinearRegCostFunction(theta []float64, lambda float64) (j f
 
     thetaReg := 0.0
     for i := 1; i < len(theta); i++ {
-        thetaReg += theta[i]
+        thetaReg += math.Pow(theta[i], 2)
     }
 
     // Calculate the regularized cost
@@ -75,33 +77,30 @@ func (data *DataSet) LinearRegCostFunction(theta []float64, lambda float64) (j f
 func (data *DataSet) MinimizeTheta(initTheta []float64, lambda float64, maxIters int) (theta []float64) {
     theta = initTheta
 
-    fmt.Println("LAMBDA:", lambda)
-    // TODO: Try to get the optimal aplha
-    alpha := 0.001
+    // We will try to adjust this alpha to the best possible on the first iterations
+    alpha := 1.0
 
     jTraining, _, err := data.LinearRegCostFunction(theta, lambda)
     if err != nil { panic(err) }
     lastJ := jTraining + 1
+    lastTheta := make([]float64, len(initTheta))
 
     for iter := 0; iter < maxIters; iter++ {
         jTraining, grad, err := data.LinearRegCostFunction(theta, lambda)
         if err != nil { panic(err) }
 
         if jTraining > lastJ {
-            fmt.Println("Reduce ALPHA!!!", alpha)
             alpha /= 10
-        } else {
-            fmt.Println("J:", jTraining)
-            fmt.Println("Theta:", theta)
-            fmt.Println("Grad:", grad)
-            fmt.Println("------ ------")
 
+            lastJ = jTraining
+            copy(theta, lastTheta)
+        } else {
+            copy(lastTheta, theta)
             for j := 0; j < len(theta); j++ {
                 theta[j] -= alpha * grad[j]
             }
 
             if lastJ - jTraining < 0.001 {
-                fmt.Println("Found Perfct Match!!!!!")
                 return
             }
 
@@ -112,13 +111,44 @@ func (data *DataSet) MinimizeTheta(initTheta []float64, lambda float64, maxIters
     return
 }
 
-func (data *DataSet) CalcOptimumLambdaTheta() (lambda float64) {
-    //lambdas := []float64{0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10}
+func (data *DataSet) shuffle() (shuffledData *DataSet) {
+    aux := make([][]float64, len(data.X))
+
+    copy(aux, data.X)
+    for i := 0; i < len(aux); i++ {
+        aux[i] = append(aux[i], data.Y[i])
+    }
+
+    dest := make([][]float64, len(aux))
+    rand.Seed(int64(time.Now().Nanosecond()))
+    perm := rand.Perm(len(aux))
+    for i, v := range perm {
+        dest[v] = aux[i]
+    }
+
+    shuffledData = &DataSet{
+        X: dest,
+        Y: make([]float64, len(dest)),
+    }
+    for i := 0; i < len(aux); i++ {
+        shuffledData.Y[i] = shuffledData.X[i][len(shuffledData.X[i]) - 1]
+        shuffledData.X[i] = shuffledData.X[i][:len(shuffledData.X[i]) - 1]
+    }
+
+    return
+}
+
+func (data *DataSet) CalcOptimumLambdaTheta(maxIters int, suffleData bool) (lambda float64, theta []float64, performance float64) {
+    lambdas := []float64{0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10}
 
     // Get the 60% of the data as training data, 20% as cross validation, and
     // the remaining 20% as test data
     training := int64(float64(len(data.X)) * 0.6)
     cv := int64(float64(len(data.X)) * 0.8)
+
+    if suffleData {
+        data = data.shuffle()
+    }
 
     trainingData := &DataSet{
         X: data.X[:training],
@@ -133,18 +163,27 @@ func (data *DataSet) CalcOptimumLambdaTheta() (lambda float64) {
         Y: data.Y[cv:],
     }
 
-    fmt.Println("Training:", trainingData.X)
-    fmt.Println("CV:", cvData.X)
-    fmt.Println("Test:", testData.X)
-
-    trainingData.MinimizeTheta(make([]float64, len(trainingData.X[0])), 0, 20000)
-    //for _, posLambda := range lambdas {
-    //    trainingData.MinimizeTheta(make([]float64, len(trainingData.X[0])), posLambda, 10)
-        /*jTraining, _, err := data.LinearRegCostFunction(theta, posLambda)
-        jCv, _, err := data.LinearRegCostFunction(theta, posLambda)
+    bestLambda := 0.0
+    posTheta := trainingData.MinimizeTheta(make([]float64, len(trainingData.X[0])), bestLambda, maxIters)
+    bestTheta := posTheta
+    jCv, _, err := cvData.LinearRegCostFunction(posTheta, bestLambda)
+    if err != nil { panic(err) }
+    lowerJ := jCv
+    for _, posLambda := range lambdas {
+        posTheta := trainingData.MinimizeTheta(make([]float64, len(trainingData.X[0])), posLambda, maxIters)
+        jCv, _, err := cvData.LinearRegCostFunction(posTheta, 0)
         if err != nil { panic(err) }
-        fmt.Println(j)*/
-    //}
+
+        if jCv < lowerJ {
+            bestTheta = posTheta
+            lowerJ = jCv
+            bestLambda = posLambda
+        }
+    }
+
+    lambda = bestLambda
+    theta = bestTheta
+    performance, _, _ = testData.LinearRegCostFunction(theta, 0)
 
     return
 }
