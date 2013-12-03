@@ -19,6 +19,43 @@ type DataSet struct {
 	Y []float64   // The training set with values to be predicted
 }
 
+// Loads information from the local file located at filePath, and after parse
+// it, returns the DataSet ready to be used with all the information loaded
+// The file format is:
+//      X11 X12 ... X1N Y1
+//      X21 X22 ... X2N Y2
+//      ... ... ... ... ..
+//      XN1 XN2 ... XNN YN
+//
+// Note: Use a single space as separator
+func LoadFile(filePath string) (data *DataSet) {
+	strInfo, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		panic(err)
+	}
+	data = new(DataSet)
+
+	trainingData := strings.Split(string(strInfo), "\n")
+	for _, line := range trainingData {
+		if line == "" {
+			break
+		}
+
+		var values []float64
+		for _, value := range strings.Split(line, " ") {
+			floatVal, err := strconv.ParseFloat(value, 64)
+			if err != nil {
+				panic(err)
+			}
+			values = append(values, floatVal)
+		}
+		data.X = append(data.X, values[:len(values)-1])
+		data.Y = append(data.Y, values[len(values)-1])
+	}
+
+	return
+}
+
 // Calculates the cost function and gradient for the data with the given theta
 // and lambda
 func (data *DataSet) LinearRegCostFunction(theta []float64, lambda float64) (j float64, grad []float64, err error) {
@@ -84,8 +121,9 @@ func (data *DataSet) LinearRegCostFunction(theta []float64, lambda float64) (j f
 // maxIters param indicates the maximal number of iterations to obtain the
 // optimal solution, in case of detect a difference of the cost between
 // iterations smaller than 0.001 returns the theta without stopping the iteration
-func (data *DataSet) MinimizeTheta(initTheta []float64, lambda float64, maxIters int) (theta []float64) {
-	theta = initTheta
+// The theta is returned by the channel thetaCh with the lambda as last element of the array
+func (data *DataSet) MinimizeTheta(initTheta []float64, lambda float64, maxIters int, thetaCh chan []float64) {
+	theta := initTheta
 
 	// We will try to adjust this alpha to the best possible on the first iterations
 	alpha := 1.0
@@ -115,6 +153,7 @@ func (data *DataSet) MinimizeTheta(initTheta []float64, lambda float64, maxIters
 			}
 
 			if lastJ-jTraining < 0.001 {
+				thetaCh <- append(theta, lambda)
 				return
 			}
 
@@ -122,7 +161,7 @@ func (data *DataSet) MinimizeTheta(initTheta []float64, lambda float64, maxIters
 		}
 	}
 
-	return
+	thetaCh <- append(theta, lambda)
 }
 
 // Returns the given set of data with a random order in order to obtain a good
@@ -160,7 +199,7 @@ func (data *DataSet) shuffle() (shuffledData *DataSet) {
 // validations, after obtain the best lambda, check the perfomand against the
 // test set of data
 func (data *DataSet) CalcOptimumLambdaTheta(maxIters int, suffleData bool) (lambda float64, theta []float64, performance float64) {
-	lambdas := []float64{0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10}
+	lambdas := []float64{0.0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10}
 
 	if suffleData {
 		data = data.shuffle()
@@ -184,68 +223,41 @@ func (data *DataSet) CalcOptimumLambdaTheta(maxIters int, suffleData bool) (lamb
 		Y: data.Y[cv:],
 	}
 
-	bestLambda := 0.0
-	posTheta := trainingData.MinimizeTheta(make([]float64, len(trainingData.X[0])), bestLambda, maxIters)
-	bestTheta := posTheta
-	jCv, _, err := cvData.LinearRegCostFunction(posTheta, bestLambda)
-	if err != nil {
-		panic(err)
-	}
-	lowerJ := jCv
+	posTheta := make(chan []float64, len(lambdas))
+
+	// Launch a process for each lambda in order to obtain the one with best
+	// performance
 	for _, posLambda := range lambdas {
-		posTheta := trainingData.MinimizeTheta(make([]float64, len(trainingData.X[0])), posLambda, maxIters)
-		jCv, _, err := cvData.LinearRegCostFunction(posTheta, 0)
+		go trainingData.MinimizeTheta(
+			make([]float64, len(trainingData.X[0])),
+			posLambda,
+			maxIters,
+			posTheta)
+	}
+
+	bestLambda := 0.0
+	lowerJ := 0.0
+	thetaCalc := false
+	for i := 0; i < len(lambdas); i++ {
+		// The last element of the returned array is the used lambda
+		thetaToTest, _ := <-posTheta
+
+		// Get the cost for this lambda, and in case of be better, we have a new minimun
+		jCv, _, err := cvData.LinearRegCostFunction(thetaToTest[:len(thetaToTest)-1], 0)
 		if err != nil {
 			panic(err)
 		}
 
-		if jCv < lowerJ {
-			bestTheta = posTheta
+		if jCv < lowerJ || !thetaCalc {
+			bestLambda = thetaToTest[len(thetaToTest)-1]
+			theta = thetaToTest[:len(thetaToTest)-1]
 			lowerJ = jCv
-			bestLambda = posLambda
+			thetaCalc = true
 		}
 	}
 
 	lambda = bestLambda
-	theta = bestTheta
 	performance, _, _ = testData.LinearRegCostFunction(theta, 0)
-
-	return
-}
-
-// Loads information from the local file located at filePath, and after parse
-// it, returns the DataSet ready to be used with all the information loaded
-// The file format is:
-//      X11 X12 ... X1N Y1
-//      X21 X22 ... X2N Y2
-//      ... ... ... ... ..
-//      XN1 XN2 ... XNN YN
-//
-// Note: Use a single space as separator
-func LoadFile(filePath string) (data *DataSet) {
-	strInfo, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		panic(err)
-	}
-	data = new(DataSet)
-
-	trainingData := strings.Split(string(strInfo), "\n")
-	for _, line := range trainingData {
-		if line == "" {
-			break
-		}
-
-		var values []float64
-		for _, value := range strings.Split(line, " ") {
-			floatVal, err := strconv.ParseFloat(value, 64)
-			if err != nil {
-				panic(err)
-			}
-			values = append(values, floatVal)
-		}
-		data.X = append(data.X, values[:len(values)-1])
-		data.Y = append(data.Y, values[len(values)-1])
-	}
 
 	return
 }
