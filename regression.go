@@ -15,9 +15,11 @@ import (
 )
 
 type DataSet struct {
-	X [][]float64 // Training set of values for each feature
+	X [][]float64 // Training set of values for each feature, the first dimension are the test cases
 	Y []float64   // The training set with values to be predicted
+	linearReg bool
 }
+
 
 // Loads information from the local file located at filePath, and after parse
 // it, returns the DataSet ready to be used with all the information loaded
@@ -28,7 +30,7 @@ type DataSet struct {
 //      XN1 XN2 ... XNN YN
 //
 // Note: Use a single space as separator
-func LoadFile(filePath string) (data *DataSet) {
+func LoadFile(filePath string, linearReg bool) (data *DataSet) {
 	strInfo, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		panic(err)
@@ -51,6 +53,58 @@ func LoadFile(filePath string) (data *DataSet) {
 		}
 		data.X = append(data.X, values[:len(values)-1])
 		data.Y = append(data.Y, values[len(values)-1])
+	}
+
+	data.linearReg = linearReg
+
+	return
+}
+
+func neg(n float64) float64 {
+	return n - (n * 2)
+}
+
+func (data *DataSet) LogisticRegCostFunction(theta []float64, lambda float64) (j float64, grad []float64, err error) {
+	if len(data.Y) != len(data.X) {
+		err = fmt.Errorf(
+			"The number of test cases (X) %d doesn't corresponds with the number of values (Y) %d",
+			len(data.X),
+			len(data.Y))
+		return
+	}
+
+	if len(theta) != len(data.X[0]) {
+		err = fmt.Errorf(
+			"The Theta arg has a lenght of %d and the input data %d",
+			len(theta),
+			len(data.X[0]))
+		return
+	}
+
+	grad = make([]float64, len(theta))
+	m := len(data.X)
+	mF := float64(m)
+	j = 0.0
+	for i := 0; i < m; i++ {
+		hX := LogisticHipotesis(data.X[i], theta)
+
+		j += (neg(data.Y[i]) * math.Log(hX)) - (1 - data.Y[i]) * math.Log(1 - hX)
+
+		for j := 0; j < len(theta); j++ {
+			grad[j] += (hX - data.Y[i]) * data.X[i][j]
+		}
+	}
+
+	thetaReg := 0.0
+	for i := 1; i < len(theta); i++ {
+		thetaReg += math.Pow(theta[i], 2)
+	}
+
+	j = (j / float64(m)) + ((lambda * thetaReg) / float64(2 * m))
+
+	grad[0] /= mF
+	for j := 1; j < len(theta); j++ {
+		grad[j] = (grad[j] / mF) + ((lambda * theta[j]) / mF)
 	}
 
 	return
@@ -122,13 +176,21 @@ func (data *DataSet) LinearRegCostFunction(theta []float64, lambda float64) (j f
 // optimal solution, in case of detect a difference of the cost between
 // iterations smaller than 0.001 returns the theta without stopping the iteration
 // The theta is returned by the channel thetaCh with the lambda as last element of the array
-func (data *DataSet) MinimizeTheta(initTheta []float64, lambda float64, maxIters int, thetaCh chan []float64) {
+func (data *DataSet) minimizeTheta(initTheta []float64, lambda float64, maxIters int, thetaCh chan []float64) {
+	var jTraining float64
+	var grad []float64
+	var err error
+
 	theta := initTheta
 
 	// We will try to adjust this alpha to the best possible on the first iterations
 	alpha := 1.0
 
-	jTraining, _, err := data.LinearRegCostFunction(theta, lambda)
+	if data.linearReg {
+		jTraining, _, err = data.LinearRegCostFunction(theta, lambda)
+	} else {
+		jTraining, _, err = data.LogisticRegCostFunction(theta, lambda)
+	}
 	if err != nil {
 		panic(err)
 	}
@@ -136,7 +198,11 @@ func (data *DataSet) MinimizeTheta(initTheta []float64, lambda float64, maxIters
 	lastTheta := make([]float64, len(initTheta))
 
 	for iter := 0; iter < maxIters; iter++ {
-		jTraining, grad, err := data.LinearRegCostFunction(theta, lambda)
+		if data.linearReg {
+			jTraining, grad, err = data.LinearRegCostFunction(theta, lambda)
+		} else {
+			jTraining, grad, err = data.LogisticRegCostFunction(theta, lambda)
+		}
 		if err != nil {
 			panic(err)
 		}
@@ -152,10 +218,10 @@ func (data *DataSet) MinimizeTheta(initTheta []float64, lambda float64, maxIters
 				theta[j] -= alpha * grad[j]
 			}
 
-			if lastJ-jTraining < 0.001 {
+			/*if lastJ-jTraining < 0.001 {
 				thetaCh <- append(theta, lambda)
 				return
-			}
+			}*/
 
 			lastJ = jTraining
 		}
@@ -199,7 +265,8 @@ func (data *DataSet) shuffle() (shuffledData *DataSet) {
 // validations, after obtain the best lambda, check the perfomand against the
 // test set of data
 func (data *DataSet) CalcOptimumLambdaTheta(maxIters int, suffleData bool) (lambda float64, theta []float64, performance float64) {
-	lambdas := []float64{0.0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10}
+	lambdas := []float64{0.0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300}
+	//lambdas := []float64{1}
 
 	if suffleData {
 		data = data.shuffle()
@@ -213,14 +280,17 @@ func (data *DataSet) CalcOptimumLambdaTheta(maxIters int, suffleData bool) (lamb
 	trainingData := &DataSet{
 		X: data.X[:training],
 		Y: data.Y[:training],
+		linearReg: data.linearReg,
 	}
 	cvData := &DataSet{
 		X: data.X[training:cv],
 		Y: data.Y[training:cv],
+		linearReg: data.linearReg,
 	}
 	testData := &DataSet{
 		X: data.X[cv:],
 		Y: data.Y[cv:],
+		linearReg: data.linearReg,
 	}
 
 	posTheta := make(chan []float64, len(lambdas))
@@ -228,7 +298,7 @@ func (data *DataSet) CalcOptimumLambdaTheta(maxIters int, suffleData bool) (lamb
 	// Launch a process for each lambda in order to obtain the one with best
 	// performance
 	for _, posLambda := range lambdas {
-		go trainingData.MinimizeTheta(
+		go trainingData.minimizeTheta(
 			make([]float64, len(trainingData.X[0])),
 			posLambda,
 			maxIters,
@@ -238,12 +308,19 @@ func (data *DataSet) CalcOptimumLambdaTheta(maxIters int, suffleData bool) (lamb
 	bestLambda := 0.0
 	lowerJ := 0.0
 	thetaCalc := false
+	var jCv float64
+	var err error
+
 	for i := 0; i < len(lambdas); i++ {
 		// The last element of the returned array is the used lambda
 		thetaToTest, _ := <-posTheta
 
-		// Get the cost for this lambda, and in case of be better, we have a new minimun
-		jCv, _, err := cvData.LinearRegCostFunction(thetaToTest[:len(thetaToTest)-1], 0)
+		// Get the cost for this lambda, and in case of be better we have a new minimun
+		if data.linearReg {
+			jCv, _, err = cvData.LinearRegCostFunction(thetaToTest[:len(thetaToTest)-1], 0)
+		} else {
+			jCv, _, err = cvData.LogisticRegCostFunction(thetaToTest[:len(thetaToTest)-1], 0)
+		}
 		if err != nil {
 			panic(err)
 		}
@@ -257,7 +334,83 @@ func (data *DataSet) CalcOptimumLambdaTheta(maxIters int, suffleData bool) (lamb
 	}
 
 	lambda = bestLambda
+
+	// Use the cost as performance for linear regression
+	/*performance = 0
+	for i, values := range testData.X {
+		fmt.Println(LinearHipotesis(values, theta), testData.Y[i])
+		if data.linearReg {
+			performance += math.Abs(LinearHipotesis(values, theta) - testData.Y[i])
+		} else {
+			performance += math.Abs(LogisticHipotesis(values, theta) - testData.Y[i])
+		}
+	}
+
+	performance /= float64(len(testData.X))*/
+
 	performance, _, _ = testData.LinearRegCostFunction(theta, 0)
+
+	return
+}
+
+func Normalize(values []float64) (norm []float64, valid bool) {
+	avg := 0.0
+	max := math.Inf(-1)
+	min := math.Inf(1)
+	math.Inf(1)
+	for _, val := range values {
+		avg += val
+		if val < min {
+			min = val
+		}
+		if val > max {
+			max = val
+		}
+	}
+	avg /= float64(len(values))
+
+	if max == min {
+		valid = false
+		return
+	}
+
+	valid = true
+	for _, val := range values {
+		norm = append(norm, (val - avg) / (max - min))
+	}
+
+	return
+}
+
+func (data *DataSet) PrepareX(grad int) {
+	var newX [][]float64
+
+	for _, values := range data.X {
+		result := []float64{1}
+
+		for _, value := range values {
+			for calcGrad := 1; calcGrad <= grad; calcGrad++ {
+				result = append(result, math.Pow(value, float64(calcGrad)))
+			}
+		}
+
+		newX = append(newX, result)
+	}
+
+	data.X = newX
+}
+
+// Calculate the hipotesis using the sigmoid function
+func LogisticHipotesis(x []float64, theta []float64) (result float64) {
+	h :=  LinearHipotesis(x, theta)
+	return 1 / (1 + math.Pow(math.E, h - (h * 2)))
+}
+
+func LinearHipotesis(x []float64, theta []float64) (result float64) {
+	result = 0.0
+	for i, val := range x {
+		result += val * theta[i]
+	}
 
 	return
 }
