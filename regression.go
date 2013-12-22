@@ -176,15 +176,12 @@ func (data *DataSet) LinearRegCostFunction(theta []float64, lambda float64) (j f
 // optimal solution, in case of detect a difference of the cost between
 // iterations smaller than 0.001 returns the theta without stopping the iteration
 // The theta is returned by the channel thetaCh with the lambda as last element of the array
-func (data *DataSet) minimizeTheta(initTheta []float64, lambda float64, maxIters int, thetaCh chan []float64) {
+func (data *DataSet) minimizeTheta(initTheta []float64, lambda float64, maxIters int, thetaCh chan []float64, alpha float64) {
 	var jTraining float64
 	var grad []float64
 	var err error
 
 	theta := initTheta
-
-	// We will try to adjust this alpha to the best possible on the first iterations
-	alpha := 1.0
 
 	if data.linearReg {
 		jTraining, _, err = data.LinearRegCostFunction(theta, lambda)
@@ -207,7 +204,7 @@ func (data *DataSet) minimizeTheta(initTheta []float64, lambda float64, maxIters
 			panic(err)
 		}
 
-		if jTraining > lastJ {
+		if jTraining >= lastJ {
 			alpha /= 10
 
 			lastJ = jTraining
@@ -264,7 +261,7 @@ func (data *DataSet) shuffle() (shuffledData *DataSet) {
 // possibilities and the training data, and check the best match with the cross
 // validations, after obtain the best lambda, check the perfomand against the
 // test set of data
-func (data *DataSet) CalcOptimumLambdaTheta(maxIters int, suffleData bool) (lambda float64, theta []float64, performance float64) {
+func (data *DataSet) CalcOptimumLambdaTheta(maxIters int, initAlpha float64, suffleData bool) (lambda float64, theta []float64, performance float64) {
 	lambdas := []float64{0.0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300}
 	//lambdas := []float64{1}
 
@@ -302,7 +299,8 @@ func (data *DataSet) CalcOptimumLambdaTheta(maxIters int, suffleData bool) (lamb
 			make([]float64, len(trainingData.X[0])),
 			posLambda,
 			maxIters,
-			posTheta)
+			posTheta,
+			initAlpha)
 	}
 
 	bestLambda := 0.0
@@ -348,7 +346,22 @@ func (data *DataSet) CalcOptimumLambdaTheta(maxIters int, suffleData bool) (lamb
 
 	performance /= float64(len(testData.X))*/
 
-	performance, _, _ = testData.LinearRegCostFunction(theta, 0)
+	if data.linearReg {
+		performance, _, _ = testData.LinearRegCostFunction(theta, 0)
+	} else {
+		match := 0
+		for i := 0; i < len(testData.X); i++ {
+			// Calculate the train Accuracy
+			if (
+				(LogisticHipotesis(testData.X[i], theta) > 0.5 && testData.Y[i] == 1) ||
+				(LogisticHipotesis(testData.X[i], theta) < 0.5 && testData.Y[i] == 0)) {
+				match += 1
+			}
+			//fmt.Println(LogisticHipotesis(testData.X[i], theta), testData.Y[i])
+		}
+
+		performance = float64(match) / float64(len(testData.Y))
+	}
 
 	return
 }
@@ -382,15 +395,82 @@ func Normalize(values []float64) (norm []float64, valid bool) {
 	return
 }
 
-func (data *DataSet) PrepareX(grad int) {
+func multElems(elems []float64) (resilt float64) {
+	resilt = 1
+	for _, elem := range elems {
+		resilt *= elem
+	}
+
+	return
+}
+
+func combinations(iterable []float64, r int) (results []float64) {
+	pool := iterable
+	n := len(pool)
+
+	if r > n {
+		return
+	}
+
+	indices := make([]int, r)
+	for i := range indices {
+		indices[i] = i
+	}
+
+	result := make([]float64, r)
+	for i, el := range indices {
+		result[i] = pool[el]
+	}
+
+	results = append(results, multElems(result))
+	for {
+		i := r - 1
+		for ; i >= 0 && indices[i] == i+n-r; i -= 1 {
+		}
+
+		if i < 0 {
+			return
+		}
+
+		indices[i] += 1
+		for j := i + 1; j < r; j += 1 {
+			indices[j] = indices[j-1] + 1
+		}
+
+		for ; i < len(indices); i += 1 {
+			result[i] = pool[indices[i]]
+		}
+		results = append(results, multElems(result))
+	}
+
+	return
+}
+
+// This method calculates all the possible combinations of the features and
+// returns them with the specified degree, for example, for a data.X with x1, x2
+// and degree 2 will convert data.X to 1, x1, x2, x1 * x2, x1 ** 2, x2 ** 2,
+// (x1 * x2) ** 2
+// Use this method with care in order to calculate the model who fits better with
+// the problem
+func (data *DataSet) MapFeatures(degree int) {
+	elems := len(data.X[1])
+	for i := 0; i < len(data.X); i++ {
+		for l := 2; l <= elems; l++ {
+			data.X[i] = append(data.X[i], combinations(data.X[i], l)...)
+		}
+	}
+	data.PrepareX(degree)
+}
+
+func (data *DataSet) PrepareX(degree int) {
 	var newX [][]float64
 
 	for _, values := range data.X {
 		result := []float64{1}
 
 		for _, value := range values {
-			for calcGrad := 1; calcGrad <= grad; calcGrad++ {
-				result = append(result, math.Pow(value, float64(calcGrad)))
+			for calcDeg := 1; calcDeg <= degree; calcDeg++ {
+				result = append(result, math.Pow(value, float64(calcDeg)))
 			}
 		}
 
