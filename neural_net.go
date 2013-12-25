@@ -1,5 +1,5 @@
 /*
-Neural network implementation, the neural network contains a single hidden layer
+Neural network implementation
 */
 package ml
 
