@@ -17,7 +17,7 @@ import (
 type DataSet struct {
 	X [][]float64 // Training set of values for each feature, the first dimension are the test cases
 	Y []float64   // The training set with values to be predicted
-	linearReg bool
+	LinearReg bool
 }
 
 
@@ -30,7 +30,7 @@ type DataSet struct {
 //      XN1 XN2 ... XNN YN
 //
 // Note: Use a single space as separator
-func LoadFile(filePath string, linearReg bool) (data *DataSet) {
+func LoadFile(filePath string, LinearReg bool) (data *DataSet) {
 	strInfo, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		panic(err)
@@ -55,7 +55,7 @@ func LoadFile(filePath string, linearReg bool) (data *DataSet) {
 		data.Y = append(data.Y, values[len(values)-1])
 	}
 
-	data.linearReg = linearReg
+	data.LinearReg = LinearReg
 
 	return
 }
@@ -183,7 +183,7 @@ func (data *DataSet) minimizeTheta(initTheta []float64, lambda float64, maxIters
 
 	theta := initTheta
 
-	if data.linearReg {
+	if data.LinearReg {
 		jTraining, _, err = data.LinearRegCostFunction(theta, lambda)
 	} else {
 		jTraining, _, err = data.LogisticRegCostFunction(theta, lambda)
@@ -195,7 +195,7 @@ func (data *DataSet) minimizeTheta(initTheta []float64, lambda float64, maxIters
 	lastTheta := make([]float64, len(initTheta))
 
 	for iter := 0; iter < maxIters; iter++ {
-		if data.linearReg {
+		if data.LinearReg {
 			jTraining, grad, err = data.LinearRegCostFunction(theta, lambda)
 		} else {
 			jTraining, grad, err = data.LogisticRegCostFunction(theta, lambda)
@@ -263,7 +263,6 @@ func (data *DataSet) shuffle() (shuffledData *DataSet) {
 // test set of data
 func (data *DataSet) CalcOptimumLambdaTheta(maxIters int, initAlpha float64, suffleData bool) (lambda float64, theta []float64, performance float64) {
 	lambdas := []float64{0.0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300}
-	//lambdas := []float64{1}
 
 	if suffleData {
 		data = data.shuffle()
@@ -277,17 +276,17 @@ func (data *DataSet) CalcOptimumLambdaTheta(maxIters int, initAlpha float64, suf
 	trainingData := &DataSet{
 		X: data.X[:training],
 		Y: data.Y[:training],
-		linearReg: data.linearReg,
+		LinearReg: data.LinearReg,
 	}
 	cvData := &DataSet{
 		X: data.X[training:cv],
 		Y: data.Y[training:cv],
-		linearReg: data.linearReg,
+		LinearReg: data.LinearReg,
 	}
 	testData := &DataSet{
 		X: data.X[cv:],
 		Y: data.Y[cv:],
-		linearReg: data.linearReg,
+		LinearReg: data.LinearReg,
 	}
 
 	posTheta := make(chan []float64, len(lambdas))
@@ -314,7 +313,7 @@ func (data *DataSet) CalcOptimumLambdaTheta(maxIters int, initAlpha float64, suf
 		thetaToTest, _ := <-posTheta
 
 		// Get the cost for this lambda, and in case of be better we have a new minimun
-		if data.linearReg {
+		if data.LinearReg {
 			jCv, _, err = cvData.LinearRegCostFunction(thetaToTest[:len(thetaToTest)-1], 0)
 		} else {
 			jCv, _, err = cvData.LogisticRegCostFunction(thetaToTest[:len(thetaToTest)-1], 0)
@@ -333,20 +332,7 @@ func (data *DataSet) CalcOptimumLambdaTheta(maxIters int, initAlpha float64, suf
 
 	lambda = bestLambda
 
-	// Use the cost as performance for linear regression
-	/*performance = 0
-	for i, values := range testData.X {
-		fmt.Println(LinearHipotesis(values, theta), testData.Y[i])
-		if data.linearReg {
-			performance += math.Abs(LinearHipotesis(values, theta) - testData.Y[i])
-		} else {
-			performance += math.Abs(LogisticHipotesis(values, theta) - testData.Y[i])
-		}
-	}
-
-	performance /= float64(len(testData.X))*/
-
-	if data.linearReg {
+	if data.LinearReg {
 		performance, _, _ = testData.LinearRegCostFunction(theta, 0)
 	} else {
 		match := 0
@@ -455,8 +441,11 @@ func combinations(iterable []float64, r int) (results []float64) {
 func (data *DataSet) MapFeatures(degree int) {
 	elems := len(data.X[1])
 	for i := 0; i < len(data.X); i++ {
+		aux := make([]float64, len(data.X[i]))
+		copy(aux, data.X[i])
+
 		for l := 2; l <= elems; l++ {
-			data.X[i] = append(data.X[i], combinations(data.X[i], l)...)
+			data.X[i] = append(data.X[i], combinations(aux, l)...)
 		}
 	}
 	data.PrepareX(degree)
@@ -480,12 +469,17 @@ func (data *DataSet) PrepareX(degree int) {
 	data.X = newX
 }
 
-// Calculate the hipotesis using the sigmoid function
-func LogisticHipotesis(x []float64, theta []float64) (result float64) {
-	h :=  LinearHipotesis(x, theta)
-	return 1 / (1 + math.Pow(math.E, h - (h * 2)))
+func sigmoid(z float64) float64 {
+	return 1 / (1 + math.Pow(math.E, neg(z)))
 }
 
+// Calculate the hipotesis using the sigmoid function
+func LogisticHipotesis(x []float64, theta []float64) float64 {
+	h :=  LinearHipotesis(x, theta)
+	return sigmoid(h)
+}
+
+// TODO: Change the name to this func
 func LinearHipotesis(x []float64, theta []float64) (result float64) {
 	result = 0.0
 	for i, val := range x {

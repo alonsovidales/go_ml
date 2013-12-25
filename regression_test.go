@@ -133,7 +133,7 @@ func TestCalculateOptimumDataLogRegWithPrepare(t *testing.T) {
 
 	_, _, performance := data.CalcOptimumLambdaTheta(20000, 0.01, true)
 
-	if performance > 0.65 {
+	if performance < 0.65 {
 		t.Error("The expected performance is better than: 0.65 but the returned value is:", performance)
 	}
 }
