@@ -14,16 +14,25 @@ func TestNeuralNet(t *testing.T) {
 		"test_data/nn/x.csv",
 		"test_data/nn/y.csv",
 		[]string{"test_data/nn/theta1.csv", "test_data/nn/theta2.csv"},
+		//[]string{},
 	)
 
-	fmt.Println("X:", len(nn.X))
-	fmt.Println("Y:", len(nn.Y))
-	fmt.Println("Theta:", len(nn.Theta))
+	x, fx, i := fmincgNn(1, nn, 200)
 
-	cost, _, _ := nn.NeuralNetCostFunction(0.5)
-	fmt.Println("Cost:", cost)
+	fmt.Println("X:", x)
+	fmt.Println("fx:", fx)
+	fmt.Println("i:", i)
 
-	if cost != 0.3356995121261227 {
-		t.Error("The expected cost is 0.3356995121261227, but ", cost, "obtained")
-	}
+	//nn.InitializeThetas([]int{400, 50, 10})
+
+	/*finalCost, performance := nn.MinimizeCost(30, 1, false, true)
+	fmt.Println("Final Cost:", finalCost)
+	fmt.Println("Performance:", performance)*/
+
+	/*j, _, _ := nn.NeuralNetCostFunction(0)
+	fmt.Println(j)
+
+	if finalCost != 0.3356995121261227 {
+		t.Error("The expected cost is 0.3356995121261227, but ", finalCost, "obtained")
+	}*/
 }

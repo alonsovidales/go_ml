@@ -61,7 +61,7 @@ func LoadFile(filePath string, LinearReg bool) (data *DataSet) {
 }
 
 func neg(n float64) float64 {
-	return n - (n * 2)
+	return -n
 }
 
 func (data *DataSet) LogisticRegCostFunction(theta []float64, lambda float64) (j float64, grad []float64, err error) {
@@ -261,10 +261,10 @@ func (data *DataSet) shuffle() (shuffledData *DataSet) {
 // possibilities and the training data, and check the best match with the cross
 // validations, after obtain the best lambda, check the perfomand against the
 // test set of data
-func (data *DataSet) CalcOptimumLambdaTheta(maxIters int, initAlpha float64, suffleData bool) (lambda float64, theta []float64, performance float64) {
+func (data *DataSet) CalcOptimumLambdaTheta(maxIters int, initAlpha float64, shuffleData bool) (lambda float64, theta []float64, performance float64) {
 	lambdas := []float64{0.0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300}
 
-	if suffleData {
+	if shuffleData {
 		data = data.shuffle()
 	}
 
