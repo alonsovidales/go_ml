@@ -309,48 +309,6 @@ func (nn *NeuralNet) applyGrad(grad [][][]float64, steep float64) (newTheta [][]
 	return
 }
 
-func (nn *NeuralNet) minimizeTheta(lambda float64, maxIters int, alphaStep float64, verbose bool) float64 {
-	var jTraining float64
-	var grad [][][]float64
-
-	for iter := 0; iter < maxIters; iter++ {
-		step := 0.001
-		jTraining, grad, _ = nn.NeuralNetCostFunction(lambda, true)
-		fmt.Println("InitJ:", jTraining)
-		initTheta := nn.Theta
-
-		lastJ := jTraining
-
-		stepSearch: for {
-			step *= 2
-			nn.Theta = initTheta
-			nn.Theta = nn.applyGrad(grad, step)
-			jTraining, _, _ = nn.NeuralNetCostFunction(lambda, false)
-
-			if verbose{
-				fmt.Println("Step:", step, "Cost:", jTraining, "Diff:", lastJ - jTraining)
-			}
-
-			if jTraining > lastJ {
-				fmt.Println("FoundMin")
-				step /= 2
-				nn.Theta = initTheta
-				nn.Theta = nn.applyGrad(grad, step)
-
-				if verbose{
-					jTraining, _, _ = nn.NeuralNetCostFunction(lambda, false)
-					fmt.Println("RestoreJ:", jTraining)
-				}
-				break stepSearch
-			}
-
-			lastJ = jTraining
-		}
-	}
-
-	return jTraining
-}
-
 func copyTheta(theta [][][]float64) (copyTheta [][][]float64) {
 	copyTheta = make([][][]float64, len(theta))
 	for i := 0; i < len(theta); i++ {
@@ -382,9 +340,8 @@ func (nn *NeuralNet) Hipotesis(x []float64) (result []float64) {
 // possibilities and the training nn, and check the best match with the cross
 // validations, after obtain the best lambda, check the perfomand against the
 // test set of nn
-func (nn *NeuralNet) MinimizeCost(maxIters int, alphaStep float64, suffleData bool, verbose bool) (finalCost float64, performance float64) {
-	//lambdas := []float64{0.0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300}
-	lambdas := []float64{1.0}
+func (nn *NeuralNet) MinimizeCost(maxIters int, suffleData bool, verbose bool) (finalCost float64, performance float64) {
+	lambdas := []float64{0.0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300}
 
 	//initTheta := copyTheta(nn.Theta)
 
@@ -398,10 +355,8 @@ func (nn *NeuralNet) MinimizeCost(maxIters int, alphaStep float64, suffleData bo
 	cv := int64(float64(len(nn.X)) * 0.8)
 
 	trainingData := &NeuralNet{
-		//X: nn.X[:training],
-		//Y: nn.Y[:training],
-		X: nn.X,
-		Y: nn.Y,
+		X: nn.X[:training],
+		Y: nn.Y[:training],
 		Theta: nn.Theta,
 	}
 
@@ -419,29 +374,41 @@ func (nn *NeuralNet) MinimizeCost(maxIters int, alphaStep float64, suffleData bo
 	// Launch a process for each lambda in order to obtain the one with best
 	// performance
 	bestJ := math.Inf(1)
-	var bestTheta [][][]float64
+	bestLambda := 0.0
 
 	for _, posLambda := range lambdas {
-		trainingData.minimizeTheta(posLambda, maxIters, alphaStep, verbose)
+		if verbose {
+			fmt.Println("Checking Lambda:", posLambda)
+		}
+		trainingData.fmincgNn(posLambda, 3, verbose)
 		cvData.Theta = trainingData.Theta
 
 		j, _, _ := cvData.NeuralNetCostFunction(posLambda, false)
 
 		if bestJ > j {
 			bestJ = j
-			bestTheta = copyTheta(trainingData.Theta)
+			bestLambda = posLambda
 		}
 	}
 
-	nn.Theta = bestTheta
-	testData.Theta = bestTheta
+	// Include the cross validation cases into the training for the final train
+	trainingData.X = append(trainingData.X, cvData.X...)
+	trainingData.Y = append(trainingData.Y, cvData.Y...)
+
+	if verbose {
+		fmt.Println("Lambda:", bestLambda)
+		fmt.Println("Training with the 80% of the samples...")
+	}
+	trainingData.fmincgNn(bestLambda, maxIters, verbose)
+
+	testData.Theta = trainingData.Theta
+	nn.Theta = trainingData.Theta
 
 	matches := 0.0
 	for i := 0; i < len(testData.X); i++ {
 		match := true
 		prediction := testData.Hipotesis(testData.X[i])
 
-		fmt.Println("Pred:", prediction)
 		for i := 0; i < len(prediction); i++ {
 			if prediction[i] > 0.5 {
 				prediction[i] = 1
@@ -450,8 +417,6 @@ func (nn *NeuralNet) MinimizeCost(maxIters int, alphaStep float64, suffleData bo
 			}
 		}
 
-		fmt.Println("Pred:", prediction)
-		fmt.Println("Valu:", testData.Y[i])
 		checkHip: for h := 0; h < len(prediction); h++ {
 			if testData.Y[i][h] != prediction[h] {
 				match = false

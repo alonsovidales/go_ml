@@ -46,27 +46,46 @@ func TestNeuralNet(t *testing.T) {
 	nn := NewNeuralNetFromCsv(
 		"test_data/nn/x.csv",
 		"test_data/nn/y.csv",
-		//[]string{"test_data/nn/initial_Theta1.csv", "test_data/nn/initial_Theta2.csv"},
+		[]string{"test_data/nn/initial_Theta1.csv", "test_data/nn/initial_Theta2.csv"},
+	)
+
+	//nn.InitializeThetas([]int{400, 25, 10})
+
+	fx, i := nn.fmincgNn(1, 3, false)
+
+	if i != 0 {
+		t.Error("Some error happened on fmincgNn calculation :'(")
+	}
+
+	if fx[0] > 3.3 {
+		t.Error("Expected J too hight on first iteration:", fx[0])
+	}
+
+	if fx[1] > 3.25 {
+		t.Error("Expected J too hight on first iteration:", fx[1])
+	}
+
+	if fx[2] > 3.21 {
+		t.Error("Expected J too hight on first iteration:", fx[2])
+	}
+}
+
+func TestNeuralNetMinimizeCost(t *testing.T) {
+	nn := NewNeuralNetFromCsv(
+		"test_data/nn/x.csv",
+		"test_data/nn/y.csv",
 		[]string{},
 	)
 
 	nn.InitializeThetas([]int{400, 25, 10})
+	j, performance := nn.MinimizeCost(30, true, true)
 
-	fx, i := fmincgNn(1, nn, 20)
-
-	fmt.Println("fx:", fx)
-	fmt.Println("i:", i)
-
-	//nn.InitializeThetas([]int{400, 50, 10})
-
-	/*finalCost, performance := nn.MinimizeCost(30, 1, false, true)
-	fmt.Println("Final Cost:", finalCost)
-	fmt.Println("Performance:", performance)*/
-
-	/*j, _, _ := nn.NeuralNetCostFunction(0)
-	fmt.Println(j)
-
-	if finalCost != 0.3356995121261227 {
-		t.Error("The expected cost is 0.3356995121261227, but ", finalCost, "obtained")
-	}*/
+	fmt.Println("J:", j)
+	fmt.Println("Perf:", performance)
+	if j > 0.8 {
+		t.Error("Cost bigger than 0.8:", j)
+	}
+	if performance < 0.8 {
+		t.Error("Performance worstest than 0.8:", performance)
+	}
 }

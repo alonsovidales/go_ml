@@ -45,7 +45,7 @@ import (
 // advisable in any important application.  All use of these programs is
 // entirely at the user's own risk.
 
-func fmincgNn(lambda float64, nn *NeuralNet, length int) (fx[]float64, i int) {
+func (nn *NeuralNet) fmincgNn(lambda float64, length int, verbose bool) (fx[]float64, i int) {
 	rho := 0.01  // a bunch of constants for line searches
 	sig := 0.5   // RHO and SIG are the constants in the Wolfe-Powell conditions
 	int := 0.1   // don't reevaluate within 0.1 of the limit of the current bracket
@@ -164,7 +164,9 @@ func fmincgNn(lambda float64, nn *NeuralNet, length int) (fx[]float64, i int) {
 		if success {
 			f1 = f2
 			fx = append(fx, f1)
-			fmt.Printf("Iteration: %d | Cost: %f\n", i + 1, f1)
+			if verbose {
+				fmt.Printf("Iteration: %d | Cost: %f\n", i + 1, f1)
+			}
 
 			// Polack-Ribiere direction
 			s = mt.Sub(mt.MultBy(s, (mt.Mult(df2, mt.Trans(df2))[0][0] - mt.Mult(df1, mt.Trans(df2))[0][0]) / mt.Mult(df1, mt.Trans(df1))[0][0]), df2)
