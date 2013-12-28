@@ -46,7 +46,7 @@ func sigmoidGradient(x float64) float64 {
 func removeBias(x [][]float64) (result [][]float64) {
 	result = make([][]float64, len(x))
 	for i := 0; i < len(x); i++ {
-		result[i] = append([]float64{0}, x[0][1:]...)
+		result[i] = append([]float64{0}, x[i][1:]...)
 	}
 
 	return
@@ -107,6 +107,7 @@ func (nn *NeuralNet) NeuralNetCostFunction(lambda float64, calcGrad bool) (j flo
 	}
 	j += (lambda * thetaReg) / float64(2*len(nn.Y))
 
+	fmt.Println("J:", j)
 	if !calcGrad {
 		return
 	}
@@ -115,11 +116,10 @@ func (nn *NeuralNet) NeuralNetCostFunction(lambda float64, calcGrad bool) (j flo
 	tmpGrad := make([][][]float64, len(nn.Theta))
 	// Initialize the tmpGrad to contain matrix with the same size as thetas
 	for i, theta := range nn.Theta {
-		aux := make([][]float64, len(theta))
+		tmpGrad[i] = make([][]float64, len(theta))
 		for j := 0; j < len(theta); j++ {
-			aux[j] = make([]float64, len(theta[0]))
+			tmpGrad[i][j] = make([]float64, len(theta[0]))
 		}
-		tmpGrad[i] = aux
 	}
 	for i := 0; i < len(nn.X); i++ {
 		// FW
@@ -133,16 +133,25 @@ func (nn *NeuralNet) NeuralNetCostFunction(lambda float64, calcGrad bool) (j flo
 
 		// BW
 		delta := make([][][]float64, len(nn.Theta))
-
 		delta[len(nn.Theta)-1] = mt.Sub([][]float64{a[len(nn.Theta)][0][1:]}, [][]float64{nn.Y[i]})
-		for d := len(nn.Theta) - 1; d > 0; d-- {
-			delta[d-1] = mt.MultElems(mt.Mult(delta[d], nn.Theta[d]), addBias(mt.Apply(z[d-1], sigmoidGradient)))
 
-			tmpGrad[d-1] = mt.Sum(tmpGrad[d-1], mt.Mult(mt.Trans([][]float64{delta[d-1][0][1:]}), a[d-1]))
+		for d := len(nn.Theta) - 2; d >= 0; d-- {
+			delta[d] = mt.MultElems(mt.Mult(delta[d + 1], nn.Theta[d + 1]), addBias(mt.Apply(z[d], sigmoidGradient)))
+			delta[d] = [][]float64{delta[d][0][1:]}
+		}
+
+		for d := 0; d < len(tmpGrad); d++ {
+			tmpGrad[d] = mt.Sum(tmpGrad[d], mt.Mult(mt.Trans([][]float64{delta[d][0]}), a[d]))
 		}
 	}
 
 	grad = make([][][]float64, len(nn.Theta))
+
+	tmp := 0.0
+	for i := 0; i < len(nn.Theta[0]); i++ {
+		tmp += nn.Theta[0][i][0]
+	}
+
 	for i := 0; i < len(tmpGrad); i++ {
 		grad[i] = mt.Sum(mt.MultBy(tmpGrad[i], 1/float64(len(nn.X))), mt.MultBy(removeBias(nn.Theta[i]), lambda/float64(len(nn.X))))
 	}
@@ -153,7 +162,7 @@ func (nn *NeuralNet) NeuralNetCostFunction(lambda float64, calcGrad bool) (j flo
 // Random inizialization of the thetas, the layerSizes array will contain on
 // each row, the size of the layer to be initialized, the first layer is the
 // input nn size, and last layer will correspond to the output layer
-func (nn *NeuralNet) InitializeTheta(layerSizes []int) {
+func (nn *NeuralNet) InitializeThetas(layerSizes []int) {
 	rand.Seed(int64(time.Now().Nanosecond()))
 	epsilon := math.Sqrt(6) / math.Sqrt(float64(layerSizes[0] + layerSizes[len(layerSizes) - 1]))
 
