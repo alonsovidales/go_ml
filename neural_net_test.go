@@ -46,13 +46,14 @@ func TestNeuralNet(t *testing.T) {
 	nn := NewNeuralNetFromCsv(
 		"test_data/nn/x.csv",
 		"test_data/nn/y.csv",
-		[]string{"test_data/nn/theta1.csv", "test_data/nn/theta2.csv"},
-		//[]string{},
+		//[]string{"test_data/nn/initial_Theta1.csv", "test_data/nn/initial_Theta2.csv"},
+		[]string{},
 	)
 
-	x, fx, i := fmincgNn(1, nn, 200)
+	nn.InitializeThetas([]int{400, 25, 10})
 
-	fmt.Println("X:", x)
+	fx, i := fmincgNn(1, nn, 20)
+
 	fmt.Println("fx:", fx)
 	fmt.Println("i:", i)
 

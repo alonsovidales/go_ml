@@ -107,7 +107,6 @@ func (nn *NeuralNet) NeuralNetCostFunction(lambda float64, calcGrad bool) (j flo
 	}
 	j += (lambda * thetaReg) / float64(2*len(nn.Y))
 
-	fmt.Println("J:", j)
 	if !calcGrad {
 		return
 	}
@@ -169,19 +168,17 @@ func (nn *NeuralNet) InitializeThetas(layerSizes []int) {
 	nn.Theta = make([][][]float64, len(layerSizes) - 1)
 
 	for l := 1; l < len(layerSizes); l++ {
-		aux := make([][]float64, layerSizes[l])
+		nn.Theta[l - 1] = make([][]float64, layerSizes[l])
 		for n := 0; n < layerSizes[l]; n++ {
-			neuronTheta := make([]float64, layerSizes[l - 1] + 1)
+			nn.Theta[l - 1][n] = make([]float64, layerSizes[l - 1] + 1)
 			for i := 0; i < layerSizes[l - 1] + 1; i++ {
 				if rand.Float64() > 0.5 {
-					neuronTheta[i] = (rand.Float64() * epsilon)
+					nn.Theta[l - 1][n][i] = (rand.Float64() * epsilon)
 				} else {
-					neuronTheta[i] = 0 - (rand.Float64() * epsilon)
+					nn.Theta[l - 1][n][i] = 0 - (rand.Float64() * epsilon)
 				}
 			}
-			aux[n] = neuronTheta
 		}
-		nn.Theta[l - 1] = aux
 	}
 
 	return
