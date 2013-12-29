@@ -84,6 +84,31 @@ func (nn *NeuralNet) unrollThetasGrad(x [][]float64) (r [][][]float64) {
 	return
 }
 
+func (nn *NeuralNet) SaveThetas(targetDir string) (files []string) {
+	fileCont := make([]string, len(nn.Theta))
+	for i := 0; i < len(nn.Theta); i++ {
+		for j := 0; j < len(nn.Theta[i]); j++ {
+			s := []string{}
+			for k := 0; k < len(nn.Theta[i][j]); k++ {
+				s = append(s, strconv.FormatFloat(nn.Theta[i][j][k], 'e', -1, 64))
+			}
+
+			fileCont[i] += strings.Join(s, " ") + "\n"
+		}
+	}
+
+	files = make([]string, len(nn.Theta))
+	for i := 0; i < len(nn.Theta); i++ {
+		files[i] = fmt.Sprintf("%s/theta_%d.txt", targetDir, i)
+		ioutil.WriteFile(
+			files[i],
+			[]byte(fileCont[i]),
+			0644)
+	}
+
+	return
+}
+
 func (nn *NeuralNet) NeuralNetCostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64, err error) {
 	// Calculate the hipotesis for all the layers
 	hx := nn.X

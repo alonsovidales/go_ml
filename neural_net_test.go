@@ -89,3 +89,28 @@ func TestNeuralNetMinimizeCost(t *testing.T) {
 		t.Error("Performance worstest than 0.8:", performance)
 	}
 }
+
+func TestNeuralNetSaveLoad(t *testing.T) {
+	nn := NewNeuralNetFromCsv(
+		"test_data/nn/x.csv",
+		"test_data/nn/y.csv",
+		[]string{},
+	)
+
+	nn.InitializeThetas([]int{400, 25, 10})
+
+	files := nn.SaveThetas("test_data/nn/")
+
+	nn2 := NewNeuralNetFromCsv(
+		"test_data/nn/x.csv",
+		"test_data/nn/y.csv",
+		files,
+	)
+
+	j1, _, _ := nn.NeuralNetCostFunction(1, false)
+	j2, _, _ := nn2.NeuralNetCostFunction(1, false)
+
+	if j1 != j2 {
+		t.Error("The cost returned after store and read the Thetas from files, doesn't match with the initial theta")
+	}
+}
