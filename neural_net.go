@@ -109,7 +109,7 @@ func (nn *NeuralNet) SaveThetas(targetDir string) (files []string) {
 	return
 }
 
-func (nn *NeuralNet) NeuralNetCostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64, err error) {
+func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64, err error) {
 	// Calculate the hipotesis for all the layers
 	hx := nn.X
 	for i := 0; i < len(nn.Theta); i++ {
@@ -212,60 +212,64 @@ func (nn *NeuralNet) InitializeThetas(layerSizes []int) {
 func NewNeuralNetFromCsv(xSrc string, ySrc string, thetaSrc []string) (result *NeuralNet) {
 	result = new(NeuralNet)
 
-	// Parse the X params
-	strInfo, err := ioutil.ReadFile(xSrc)
-	if err != nil {
-		panic(err)
-	}
-
-	trainingData := strings.Split(string(strInfo), "\n")
-	for _, line := range trainingData {
-		if line == "" {
-			break
-		}
-
-		var values []float64
-		for _, value := range strings.Split(line, " ") {
-			floatVal, err := strconv.ParseFloat(value, 64)
-			if err != nil {
-				panic(err)
-			}
-			values = append(values, floatVal)
-		}
-		result.X = append(result.X, values)
-	}
-
-	// Parse the Y params
-	strInfo, err = ioutil.ReadFile(ySrc)
-	if err != nil {
-		panic(err)
-	}
-
-	trainingData = strings.Split(string(strInfo), "\n")
-	for _, line := range trainingData {
-		if line == "" {
-			break
-		}
-
-		var values []float64
-		for _, value := range strings.Split(line, " ") {
-			floatVal, err := strconv.ParseFloat(value, 64)
-			if err != nil {
-				panic(err)
-			}
-			values = append(values, floatVal)
-		}
-		result.Y = append(result.Y, values)
-	}
-
-	// Parse the Theta params
-	for _, thetaNSrc := range thetaSrc {
-		strInfo, err = ioutil.ReadFile(thetaNSrc)
+	if xSrc != "" {
+		// Parse the X params
+		strInfo, err := ioutil.ReadFile(xSrc)
 		if err != nil {
 			panic(err)
 		}
 
-		trainingData = strings.Split(string(strInfo), "\n")
+		trainingData := strings.Split(string(strInfo), "\n")
+		for _, line := range trainingData {
+			if line == "" {
+				break
+			}
+
+			var values []float64
+			for _, value := range strings.Split(line, " ") {
+				floatVal, err := strconv.ParseFloat(value, 64)
+				if err != nil {
+					panic(err)
+				}
+				values = append(values, floatVal)
+			}
+			result.X = append(result.X, values)
+		}
+	}
+
+	if ySrc != "" {
+		// Parse the Y params
+		strInfo, err := ioutil.ReadFile(ySrc)
+		if err != nil {
+			panic(err)
+		}
+
+		trainingData := strings.Split(string(strInfo), "\n")
+		for _, line := range trainingData {
+			if line == "" {
+				break
+			}
+
+			var values []float64
+			for _, value := range strings.Split(line, " ") {
+				floatVal, err := strconv.ParseFloat(value, 64)
+				if err != nil {
+					panic(err)
+				}
+				values = append(values, floatVal)
+			}
+			result.Y = append(result.Y, values)
+		}
+	}
+
+	// Parse the Theta params
+	for _, thetaNSrc := range thetaSrc {
+		strInfo, err := ioutil.ReadFile(thetaNSrc)
+		if err != nil {
+			panic(err)
+		}
+
+		trainingData := strings.Split(string(strInfo), "\n")
 		theta := [][]float64{}
 		for _, line := range trainingData {
 			if line == "" {
@@ -360,13 +364,57 @@ func (nn *NeuralNet) Hipotesis(x []float64) (result []float64) {
 	return aux[0]
 }
 
+func (nn *NeuralNet) GetPerformance(verbose bool) (cost float64, performance float64) {
+	matches := 0.0
+	for i := 0; i < len(nn.X); i++ {
+		match := true
+		prediction := nn.Hipotesis(nn.X[i])
+
+		for i := 0; i < len(prediction); i++ {
+			if prediction[i] > 0.5 {
+				prediction[i] = 1
+			} else {
+				prediction[i] = 0
+			}
+		}
+
+		fmt.Println("Pred:", prediction)
+		fmt.Println("Val :", nn.Y[i])
+		checkHip: for h := 0; h < len(prediction); h++ {
+			if nn.Y[i][h] != prediction[h] {
+				match = false
+				break checkHip
+			}
+		}
+
+		if match {
+			matches++
+		}
+	}
+
+	cost, _, _ = nn.CostFunction(0, false)
+	performance = matches / float64(len(nn.Y))
+
+	return
+}
+
+func (nn *NeuralNet) setTheta(t [][][]float64) {
+	nn.Theta = t
+}
+
+func (nn *NeuralNet) getTheta() [][][]float64 {
+	return nn.Theta
+}
+
 // This metod splits the given nn in three sets: training, cross validation,
 // test. In order to calculate the optimal theta, tries with different
 // possibilities and the training nn, and check the best match with the cross
 // validations, after obtain the best lambda, check the perfomand against the
 // test set of nn
-func (nn *NeuralNet) MinimizeCost(maxIters int, suffleData bool, verbose bool) (finalCost float64, performance float64) {
+func (nn *NeuralNet) MinimizeCost(maxIters int, suffleData bool, verbose bool) (finalCost float64, performance float64, trainingData *NeuralNet, testData *NeuralNet) {
 	lambdas := []float64{0.0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300}
+	//lambdas := []float64{0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300}
+	//lambdas := []float64{1}
 
 	//initTheta := copyTheta(nn.Theta)
 
@@ -379,7 +427,7 @@ func (nn *NeuralNet) MinimizeCost(maxIters int, suffleData bool, verbose bool) (
 	training := int64(float64(len(nn.X)) * 0.6)
 	cv := int64(float64(len(nn.X)) * 0.8)
 
-	trainingData := &NeuralNet{
+	trainingData = &NeuralNet{
 		X: nn.X[:training],
 		Y: nn.Y[:training],
 		Theta: nn.Theta,
@@ -390,7 +438,7 @@ func (nn *NeuralNet) MinimizeCost(maxIters int, suffleData bool, verbose bool) (
 		Y: nn.Y[training:cv],
 		Theta: nn.Theta,
 	}
-	testData := &NeuralNet{
+	testData = &NeuralNet{
 		X: nn.X[cv:],
 		Y: nn.Y[cv:],
 		Theta: nn.Theta,
@@ -400,15 +448,17 @@ func (nn *NeuralNet) MinimizeCost(maxIters int, suffleData bool, verbose bool) (
 	// performance
 	bestJ := math.Inf(1)
 	bestLambda := 0.0
+	initTheta := copyTheta(trainingData.Theta)
 
 	for _, posLambda := range lambdas {
 		if verbose {
 			fmt.Println("Checking Lambda:", posLambda)
 		}
-		trainingData.fmincgNn(posLambda, 3, verbose)
+		trainingData.Theta = copyTheta(initTheta)
+		Fmincg(trainingData, posLambda, 3, verbose)
 		cvData.Theta = trainingData.Theta
 
-		j, _, _ := cvData.NeuralNetCostFunction(posLambda, false)
+		j, _, _ := cvData.CostFunction(posLambda, false)
 
 		if bestJ > j {
 			bestJ = j
@@ -424,39 +474,12 @@ func (nn *NeuralNet) MinimizeCost(maxIters int, suffleData bool, verbose bool) (
 		fmt.Println("Lambda:", bestLambda)
 		fmt.Println("Training with the 80% of the samples...")
 	}
-	trainingData.fmincgNn(bestLambda, maxIters, verbose)
+	Fmincg(trainingData, bestLambda, maxIters, verbose)
 
 	testData.Theta = trainingData.Theta
 	nn.Theta = trainingData.Theta
 
-	matches := 0.0
-	for i := 0; i < len(testData.X); i++ {
-		match := true
-		prediction := testData.Hipotesis(testData.X[i])
-
-		for i := 0; i < len(prediction); i++ {
-			if prediction[i] > 0.5 {
-				prediction[i] = 1
-			} else {
-				prediction[i] = 0
-			}
-		}
-
-		checkHip: for h := 0; h < len(prediction); h++ {
-			if testData.Y[i][h] != prediction[h] {
-				match = false
-				break checkHip
-			}
-		}
-
-		if match {
-			matches++
-		}
-	}
-
-	finalCost, _, _ = testData.NeuralNetCostFunction(0, false)
-
-	performance = matches / float64(len(testData.Y))
+	finalCost, performance = testData.GetPerformance(verbose)
 
 	return
 }

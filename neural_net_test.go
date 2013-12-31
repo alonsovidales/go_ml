@@ -51,7 +51,7 @@ func TestNeuralNet(t *testing.T) {
 
 	//nn.InitializeThetas([]int{400, 25, 10})
 
-	fx, i := nn.fmincgNn(1, 3, false)
+	fx, i := Fmincg(nn, 1, 3, false)
 
 	if i != 0 {
 		t.Error("Some error happened on fmincgNn calculation :'(")
@@ -78,7 +78,7 @@ func TestNeuralNetMinimizeCost(t *testing.T) {
 	)
 
 	nn.InitializeThetas([]int{400, 25, 10})
-	j, performance := nn.MinimizeCost(30, true, true)
+	j, performance, _, _ := nn.MinimizeCost(30, true, true)
 
 	fmt.Println("J:", j)
 	fmt.Println("Perf:", performance)
@@ -107,8 +107,8 @@ func TestNeuralNetSaveLoad(t *testing.T) {
 		files,
 	)
 
-	j1, _, _ := nn.NeuralNetCostFunction(1, false)
-	j2, _, _ := nn2.NeuralNetCostFunction(1, false)
+	j1, _, _ := nn.CostFunction(1, false)
+	j2, _, _ := nn2.CostFunction(1, false)
 
 	if j1 != j2 {
 		t.Error("The cost returned after store and read the Thetas from files, doesn't match with the initial theta")

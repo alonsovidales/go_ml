@@ -6,6 +6,14 @@ import (
 	"fmt"
 )
 
+type DataSet interface {
+	CostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64, err error)
+	rollThetasGrad(x [][][]float64) [][]float64
+	unrollThetasGrad(x [][]float64) [][][]float64
+	setTheta(t [][][]float64)
+	getTheta() [][][]float64
+}
+
 // Minimize a continuous differentialble multivariate function. Starting point
 // is given by "X" (D by 1), and the function named in the string "f", must
 // return a function value and a vector of partial derivatives. The Polack-
@@ -45,7 +53,7 @@ import (
 // advisable in any important application.  All use of these programs is
 // entirely at the user's own risk.
 
-func (nn *NeuralNet) fmincgNn(lambda float64, length int, verbose bool) (fx[]float64, i int) {
+func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx[]float64, i int) {
 	rho := 0.01  // a bunch of constants for line searches
 	sig := 0.5   // RHO and SIG are the constants in the Wolfe-Powell conditions
 	int := 0.1   // don't reevaluate within 0.1 of the limit of the current bracket
@@ -58,25 +66,22 @@ func (nn *NeuralNet) fmincgNn(lambda float64, length int, verbose bool) (fx[]flo
 	i = 0             // zero the run length counter
 	lsFailed := false // no previous line search has failed
 
-	f1, df1Tmp, _ := nn.NeuralNetCostFunction(lambda, true) // get function value and gradient
+	f1, df1Tmp, _ := nn.CostFunction(lambda, true) // get function value and gradient
 	df1 := nn.rollThetasGrad(df1Tmp)
 	s := mt.Apply(df1, neg) // search direction is steepest
 	d1 := mt.Mult(mt.Apply(s, neg), mt.Trans(s))[0][0] // this is the slope
 	z1 := red / (float64(1) - d1) // initial step is red/(|s|+1)
 
-	// Is this necessary?
-	//fx = nn.rollThetasGrad(nn.Theta)
-
 	mainLoop: for i := 0; i < length; i++ {
 		var z2 float64
 
-		x0 := nn.rollThetasGrad(nn.Theta) // make a copy of current values
+		x0 := nn.rollThetasGrad(nn.getTheta()) // make a copy of current values
 		f0 := f1
 		df0 := mt.Copy(df1)
 		x := mt.Sum(x0, mt.MultBy(s, z1)) // begin line search
 
-		nn.Theta = nn.unrollThetasGrad(x)
-		f2, df2Temp, _ := nn.NeuralNetCostFunction(lambda, true)
+		nn.setTheta(nn.unrollThetasGrad(x))
+		f2, df2Temp, _ := nn.CostFunction(lambda, true)
 		df2 := nn.rollThetasGrad(df2Temp)
 		d2 := mt.Mult(df2, mt.Trans(s))[0][0]
 
@@ -106,8 +111,8 @@ func (nn *NeuralNet) fmincgNn(lambda float64, length int, verbose bool) (fx[]flo
 				z2 = math.Max(math.Min(z2, int * z3), (1 - int) * z3) // don't accept too close to limits
 				z1 += z2 // update the step
 				x = mt.Sum(x, mt.MultBy(s, z2))
-				nn.Theta = nn.unrollThetasGrad(x)
-				f2, df2Temp, _ = nn.NeuralNetCostFunction(lambda, true)
+				nn.setTheta(nn.unrollThetasGrad(x))
+				f2, df2Temp, _ = nn.CostFunction(lambda, true)
 				df2 = nn.rollThetasGrad(df2Temp)
 
 				m--
@@ -117,11 +122,14 @@ func (nn *NeuralNet) fmincgNn(lambda float64, length int, verbose bool) (fx[]flo
 
 			switch true {
 				case f2 > f1 + z1 * rho * d1 || d2 > neg(sig) * d1: // this is a failure
+					fmt.Println("CASE1")
 					break searchLoop
 				case d2 > sig * d1:
+					fmt.Println("CASE2")
 					success = true
 					break searchLoop
 				case m == 0: // failure
+					fmt.Println("CASE3")
 					break searchLoop
 			}
 
@@ -153,8 +161,8 @@ func (nn *NeuralNet) fmincgNn(lambda float64, length int, verbose bool) (fx[]flo
 			z3 = -z2
 			z1 += z2
 			x = mt.Sum(x, mt.MultBy(s, z2))
-			nn.Theta = nn.unrollThetasGrad(x)
-			f2, df2Temp, _ = nn.NeuralNetCostFunction(lambda, true)
+			nn.setTheta(nn.unrollThetasGrad(x))
+			f2, df2Temp, _ = nn.CostFunction(lambda, true)
 			df2 = nn.rollThetasGrad(df2Temp)
 
 			m--
@@ -185,7 +193,8 @@ func (nn *NeuralNet) fmincgNn(lambda float64, length int, verbose bool) (fx[]flo
 			d1 = d2
 			lsFailed = false
 		} else {
-			nn.Theta = nn.unrollThetasGrad(x0)
+			fmt.Println("ERROR")
+			nn.setTheta(nn.unrollThetasGrad(x0))
 			f1 = f0
 			df1 = df0
 			if lsFailed || i > length {
