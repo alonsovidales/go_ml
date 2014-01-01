@@ -136,3 +136,11 @@ func PrepareX(x [][]float64, degree int) (newX [][]float64) {
 func sigmoid(z float64) float64 {
 	return 1 / (1 + math.Pow(math.E, neg(z)))
 }
+
+func oneMinus(x float64) float64 {
+	return 1 - x
+}
+
+func powTwo(x float64) float64 {
+	return math.Pow(x, 2)
+}

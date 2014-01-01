@@ -2,6 +2,7 @@ package ml
 
 import (
 	"testing"
+	"fmt"
 )
 
 // Using a predefined dataset stored in test_data/test_linear.dat , calculate
@@ -11,6 +12,7 @@ func TestLinearRegCostFunction(t *testing.T) {
 	// Data obtained from the "Andrew Ng" machine learning course from Coursera
 	// https://www.coursera.org/course/ml
 	data := LoadFile("test_data/test_linear.dat")
+	data.LinearReg = true
 
 	theta := [][]float64{
 		[]float64{1, 1},
@@ -27,7 +29,7 @@ func TestLinearRegCostFunction(t *testing.T) {
 	}
 
 	expectedGrad := [][]float64{
-		[]float64{-15.303049999999999, 598.251293035},
+		[]float64{-15.219716666666665, 598.251293035},
 		[]float64{-3.2069500000601416e-05, 0.0009341162152152194},
 	}
 
@@ -55,7 +57,8 @@ func TestCalculateOptimumTheta(t *testing.T) {
 
 	// Data obtained from the "Andrew Ng" machine learning course from Coursera
 	// https://www.coursera.org/course/ml
-	data := &LinReg {
+	data := &Regression {
+		LinearReg: true,
 		X: [][]float64{
 			[]float64{1.0000, -15.9368},
 			[]float64{1.0000, -29.1530},
@@ -95,5 +98,32 @@ func TestCalculateOptimumTheta(t *testing.T) {
 	}
 	if data.Theta[0] != 13.087927305447673 || data.Theta[1] != 0.3677790632076952 {
 		t.Error("The expected theta values are 13.087927305447673 and 0.3677790632076952, but:", data.Theta, "obtained")
+	}
+}
+
+func TestLogisticHipotesis(t *testing.T) {
+	data := &Regression{
+		Theta: []float64{-25.161272, 0.206233, 0.201470},
+		LinearReg: false,
+	}
+	h := data.LogisticHipotesis([]float64{1, 45, 85})
+	fmt.Println("Hip:", h)
+	if h != 0.7762878133064746 {
+		t.Error("The expected value is 0.7762878133064746, but the returned value is:", h)
+	}
+}
+
+func TestCalculateOptimumDataLogRegWithPrepare(t *testing.T) {
+	// Data obtained from the "Andrew Ng" machine learning course from Coursera
+	// https://www.coursera.org/course/ml
+	data := LoadFile("test_data/test_log_regression_2.dat")
+	data.LinearReg = false
+	data.X = MapFeatures(data.X, 9)
+	data.InitializeTheta()
+
+	j, _, _ := data.MinimizeCost(200, true, true)
+
+	if j > 0.4 {
+		t.Error("The expected performance is better than: 0.4 but the returned value is:", j)
 	}
 }

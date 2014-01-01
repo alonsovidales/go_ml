@@ -31,14 +31,6 @@ func addBias(m [][]float64) (result [][]float64) {
 	return
 }
 
-func oneMinus(x float64) float64 {
-	return 1 - x
-}
-
-func powTwo(x float64) float64 {
-	return math.Pow(x, 2)
-}
-
 func sigmoidGradient(x float64) float64 {
 	return sigmoid(x) * (1 - sigmoid(x))
 }
