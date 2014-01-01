@@ -98,23 +98,27 @@ func combinations(iterable []float64, r int) (results []float64) {
 // (x1 * x2) ** 2
 // Use this method with care in order to calculate the model who fits better with
 // the problem
-func (data *NeuralNet) MapFeatures(degree int) {
-	elems := len(data.X[1])
-	for i := 0; i < len(data.X); i++ {
-		aux := make([]float64, len(data.X[i]))
-		copy(aux, data.X[i])
+func MapFeatures(x [][]float64, degree int) (ret [][]float64) {
+	ret = make([][]float64, len(x))
+	elems := len(x[1])
+	for i := 0; i < len(x); i++ {
+		aux := make([]float64, len(x[i]))
+		copy(aux, x[i])
+		ret[i] = make([]float64, len(x[i]))
+		copy(ret[i], x[i])
 
 		for l := 2; l <= elems; l++ {
-			data.X[i] = append(data.X[i], combinations(aux, l)...)
+			x[i] = append(x[i], combinations(aux, l)...)
 		}
 	}
-	data.PrepareX(degree)
+
+	ret = PrepareX(x, degree)
+
+	return
 }
 
-func (data *NeuralNet) PrepareX(degree int) {
-	var newX [][]float64
-
-	for _, values := range data.X {
+func PrepareX(x [][]float64, degree int) (newX [][]float64) {
+	for _, values := range x {
 		result := []float64{1}
 
 		for _, value := range values {
@@ -126,7 +130,7 @@ func (data *NeuralNet) PrepareX(degree int) {
 		newX = append(newX, result)
 	}
 
-	data.X = newX
+	return
 }
 
 func sigmoid(z float64) float64 {

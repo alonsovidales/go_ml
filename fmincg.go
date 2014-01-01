@@ -100,7 +100,7 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx[]float64, 
 
 		success := false
 		limit := -1.0
-		searchLoop: for {
+		searchLoop: for iters := 0; iters < max * 4; iters++ {
 			m := max
 			for ((f2 > f1 + z1 * rho * d1) || (d2 > -sig * d1)) && m > 0 {
 				limit = z1
