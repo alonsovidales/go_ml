@@ -51,42 +51,49 @@ func TestLinearRegCostFunction(t *testing.T) {
 	}
 }
 
-/*
 func TestCalculateOptimumTheta(t *testing.T) {
 
 	// Data obtained from the "Andrew Ng" machine learning course from Coursera
 	// https://www.coursera.org/course/ml
-	data := LoadFile("test_data/test_linear_polynomial.dat")
+	data := &LinReg {
+		X: [][]float64{
+			[]float64{1.0000, -15.9368},
+			[]float64{1.0000, -29.1530},
+			[]float64{1.0000, 36.1895},
+			[]float64{1.0000, 37.4922},
+			[]float64{1.0000, -48.0588},
+			[]float64{1.0000, -8.9415},
+			[]float64{1.0000, 15.3078},
+			[]float64{1.0000, -34.7063},
+			[]float64{1.0000, 1.3892},
+			[]float64{1.0000, -44.3838},
+			[]float64{1.0000, 7.0135},
+			[]float64{1.0000, 22.7627},
+		},
+		Y: []float64{
+			2.1343,
+		        1.1733,
+			34.3591,
+			36.8380,
+			2.8090,
+			2.1211,
+			14.7103,
+			2.6142,
+			3.7402,
+			3.7317,
+			7.6277,
+			22.7524,
+		},
+	}
 	data.InitializeTheta()
 
-	Fmincg(data, 0.01, 10, true)
-	j, _, _ := data.CostFunction(0.01, false)
-	fmt.Println("Theta:", data.Theta)
-	fmt.Println("J:", j)
+	Fmincg(data, 0.0, 10, true)
+	j, _, _ := data.CostFunction(0.0, false)
 
-	if performance != 4.901045349988667 {
-		t.Error("The expected performance is: 4.901045349988667 but the returned value is:", performance)
+	if j != 22.373896424566116 {
+		t.Error("The expected cost value is 22.373896424566116, but:", j, "obtained")
 	}
-
-	if lambda != 0.1 {
-		t.Error("The expected lambda is: 0.1 but the returned value is:", lambda)
+	if data.Theta[0] != 13.087927305447673 || data.Theta[1] != 0.3677790632076952 {
+		t.Error("The expected theta values are 13.087927305447673 and 0.3677790632076952, but:", data.Theta, "obtained")
 	}
-
-	expectedTheta := []float64{
-		11.668527097769664,
-		9.227365853102674,
-		5.901606532678573,
-		2.732609803669128,
-		2.048572624793663,
-		1.417634232412458,
-		-0.23465057648197382,
-		0.5051641750629966,
-		0.43653605626382835,
-	}
-
-	for i := 0; i < len(expectedTheta); i++ {
-		if theta[i] != expectedTheta[i] {
-			t.Error("The expected theta value on", i, " is:", expectedTheta[i], "but the returned value was:", theta[i])
-		}
-	}
-}*/
+}

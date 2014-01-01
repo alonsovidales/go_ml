@@ -5,9 +5,6 @@ package ml
 
 import (
 	"github.com/alonsovidales/matrix"
-	//"math"
-	//"time"
-	//"math/rand"
 	"fmt"
 	"strconv"
 	"io/ioutil"
@@ -33,11 +30,9 @@ func (lr *LinReg) unrollThetasGrad(x [][]float64) [][][]float64 {
 
 func (lr *LinReg) setTheta(t [][][]float64) {
 	lr.Theta = t[0][0]
-	fmt.Println("setTheta", lr.Theta)
 }
 
 func (lr *LinReg) getTheta() [][][]float64 {
-	fmt.Println("getTheta", lr.Theta)
 	return [][][]float64{
 		[][]float64{
 			lr.Theta,
@@ -62,9 +57,12 @@ func (lr *LinReg) CostFunction(lambda float64, calcGrad bool) (j float64, grad [
 		return
 	}
 
+	auxTheta := make([]float64, len(lr.Theta))
+	copy(auxTheta, lr.Theta)
+	theta := [][]float64{auxTheta}
+
 	m := float64(len(lr.X))
 	y := [][]float64{lr.Y}
-	theta := [][]float64{lr.Theta}
 
 	pred := mt.Trans(mt.Mult(lr.X, mt.Trans(theta)))
 	errors := mt.SumAll(mt.Apply(mt.Sub(pred, y), powTwo)) / (2 * m)
@@ -79,17 +77,6 @@ func (lr *LinReg) CostFunction(lambda float64, calcGrad bool) (j float64, grad [
 
 func (lr *LinReg) InitializeTheta() {
 	lr.Theta = make([]float64, len(lr.X[0]))
-
-	/*rand.Seed(int64(time.Now().Nanosecond()))
-
-	lr.Theta = make([]float64, len(lr.X[0]))
-	for i := 0; i < len(lr.X[0]); i++ {
-		if rand.Float64() > 0.5 {
-			lr.Theta[i] = rand.Float64()
-		} else {
-			lr.Theta[i] = -rand.Float64()
-		}
-	}*/
 }
 
 // Loads information from the local file located at filePath, and after parse

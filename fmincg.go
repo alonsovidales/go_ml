@@ -68,6 +68,9 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx[]float64, 
 
 	f1, df1Tmp, _ := nn.CostFunction(lambda, true) // get function value and gradient
 	df1 := nn.rollThetasGrad(df1Tmp)
+	bestTheta := nn.getTheta()
+	minCost := f1
+
 	s := mt.Apply(df1, neg) // search direction is steepest
 	d1 := mt.Mult(mt.Apply(s, neg), mt.Trans(s))[0][0] // this is the slope
 	z1 := red / (float64(1) - d1) // initial step is red/(|s|+1)
@@ -84,6 +87,11 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx[]float64, 
 		f2, df2Temp, _ := nn.CostFunction(lambda, true)
 		df2 := nn.rollThetasGrad(df2Temp)
 		d2 := mt.Mult(df2, mt.Trans(s))[0][0]
+
+		if f2 < minCost {
+			bestTheta = nn.getTheta()
+			minCost = f2
+		}
 
 		// initialize point 3 equal to point 1
 		f3 := f1
@@ -114,6 +122,10 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx[]float64, 
 				nn.setTheta(nn.unrollThetasGrad(x))
 				f2, df2Temp, _ = nn.CostFunction(lambda, true)
 				df2 = nn.rollThetasGrad(df2Temp)
+				if f2 < minCost {
+					bestTheta = nn.getTheta()
+					minCost = f2
+				}
 
 				m--
 				d2 = mt.Mult(df2, mt.Trans(s))[0][0]
@@ -122,14 +134,11 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx[]float64, 
 
 			switch true {
 				case f2 > f1 + z1 * rho * d1 || d2 > neg(sig) * d1: // this is a failure
-					fmt.Println("CASE1")
 					break searchLoop
 				case d2 > sig * d1:
-					fmt.Println("CASE2")
 					success = true
 					break searchLoop
 				case m == 0: // failure
-					fmt.Println("CASE3")
 					break searchLoop
 			}
 
@@ -140,6 +149,7 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx[]float64, 
 
 			switch true {
 				case z2 != z2 || z2 < 0 || z2 == math.Inf(1): // num prob or wrong sign?
+					z2 = z1 * (ext - 1)
 					if limit < -0.5 {
 						z2 = z1 * (ext - 1) // the extrapolate the maximum amount
 					} else {
@@ -163,6 +173,10 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx[]float64, 
 			x = mt.Sum(x, mt.MultBy(s, z2))
 			nn.setTheta(nn.unrollThetasGrad(x))
 			f2, df2Temp, _ = nn.CostFunction(lambda, true)
+			if f2 < minCost {
+				bestTheta = nn.getTheta()
+				minCost = f2
+			}
 			df2 = nn.rollThetasGrad(df2Temp)
 
 			m--
@@ -193,7 +207,6 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx[]float64, 
 			d1 = d2
 			lsFailed = false
 		} else {
-			fmt.Println("ERROR")
 			nn.setTheta(nn.unrollThetasGrad(x0))
 			f1 = f0
 			df1 = df0
@@ -210,5 +223,6 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx[]float64, 
 		}
 	}
 
+	nn.setTheta(bestTheta)
 	return
 }
