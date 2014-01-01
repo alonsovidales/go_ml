@@ -151,7 +151,7 @@ func (data *LinReg) Hipotesis(x []float64) (r float64) {
 // validations, after obtain the best lambda, check the perfomand against the
 // test set of data
 func (data *LinReg) MinimizeCost(maxIters int, suffleData bool, verbose bool) (finalCost float64, trainingData *LinReg, testData *LinReg) {
-	lambdas := []float64{3000, 0.0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300}
+	lambdas := []float64{0.0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300}
 
 	if suffleData {
 		data = data.shuffle()
