@@ -41,7 +41,7 @@ func TestRollUnroll(t *testing.T) {
 
 }
 
-// Using a predefined dataset stored in test_data/test_linear.dat , calculate
+// Using a predefined dataset stored in test_data/test_linear.dat, calculates
 // the cost and gradient for different lambda y theta
 func TestNeuralNet(t *testing.T) {
 	fmt.Println("Testing Neural Network Fmincg function...")
