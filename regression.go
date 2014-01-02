@@ -1,6 +1,3 @@
-/*
-Linear Regression implementation
-*/
 package ml
 
 import (
@@ -67,11 +64,13 @@ func (lr *Regression) LogisticRegCostFunction(lambda float64, calcGrad bool) (j 
 	copy(auxTheta, lr.Theta)
 	theta := [][]float64{auxTheta}
 
-	y := [][]float64{lr.Y}
 	m := float64(len(lr.X))
+	y := [][]float64{lr.Y}
 
 	hx := mt.Apply(mt.Mult(theta, mt.Trans(lr.X)), sigmoid)
-	j = (mt.Mult(mt.Apply(y, neg), mt.Trans(mt.Apply(hx, math.Log)))[0][0] - mt.Mult(mt.Apply(y, oneMinus), mt.Apply(hx, math.Log))[0][0]) / m
+	j = (
+		mt.Mult(mt.Apply(y, neg), mt.Trans(mt.Apply(hx, math.Log)))[0][0] -
+		mt.Mult(mt.Apply(y, oneMinus), mt.Trans(mt.Apply(mt.Apply(hx, oneMinus), math.Log)))[0][0]) / m
 
 	// Regularization
 	theta[0][0] = 0
@@ -111,7 +110,14 @@ func (lr *Regression) CostFunction(lambda float64, calcGrad bool) (j float64, gr
 }
 
 func (lr *Regression) InitializeTheta() {
+	rand.Seed(int64(time.Now().Nanosecond()))
 	lr.Theta = make([]float64, len(lr.X[0]))
+
+	/*if !lr.LinearReg {
+		for i := 0; i < len(lr.X[0]); i++ {
+			lr.Theta[i] = rand.Float64()
+		}
+	}*/
 }
 
 // Loads information from the local file located at filePath, and after parse

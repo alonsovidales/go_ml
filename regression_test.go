@@ -8,6 +8,7 @@ import (
 // Using a predefined dataset stored in test_data/test_linear.dat , calculate
 // the cost and gradient for different lambda y theta
 func TestLinearRegCostFunction(t *testing.T) {
+	fmt.Println("Testing Linear Regression cost function...")
 
 	// Data obtained from the "Andrew Ng" machine learning course from Coursera
 	// https://www.coursera.org/course/ml
@@ -54,6 +55,7 @@ func TestLinearRegCostFunction(t *testing.T) {
 }
 
 func TestCalculateOptimumTheta(t *testing.T) {
+	fmt.Println("Testing Linear Regression Fmincg function...")
 
 	// Data obtained from the "Andrew Ng" machine learning course from Coursera
 	// https://www.coursera.org/course/ml
@@ -102,28 +104,31 @@ func TestCalculateOptimumTheta(t *testing.T) {
 }
 
 func TestLogisticHipotesis(t *testing.T) {
+	fmt.Println("Testing Logistic Regression Hipotesis...")
+
 	data := &Regression{
 		Theta: []float64{-25.161272, 0.206233, 0.201470},
 		LinearReg: false,
 	}
 	h := data.LogisticHipotesis([]float64{1, 45, 85})
-	fmt.Println("Hip:", h)
+
 	if h != 0.7762878133064746 {
 		t.Error("The expected value is 0.7762878133064746, but the returned value is:", h)
 	}
 }
 
 func TestCalculateOptimumDataLogRegWithPrepare(t *testing.T) {
+	fmt.Println("Testing Logistic Regression Fmincg function...")
+
 	// Data obtained from the "Andrew Ng" machine learning course from Coursera
 	// https://www.coursera.org/course/ml
-	data := LoadFile("test_data/test_log_regression_2.dat")
+	data := LoadFile("test_data/data_pol.txt")
 	data.LinearReg = false
-	data.X = MapFeatures(data.X, 9)
 	data.InitializeTheta()
+	Fmincg(data, 1.0, 200, true)
+	j, _, _ := data.CostFunction(1, false)
 
-	j, _, _ := data.MinimizeCost(200, true, true)
-
-	if j > 0.4 {
-		t.Error("The expected performance is better than: 0.4 but the returned value is:", j)
+	if j > 0.529004 {
+		t.Error("The expected cost is lower than: 0.529003 but the returned value is:", j)
 	}
 }
