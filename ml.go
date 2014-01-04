@@ -64,7 +64,7 @@ func Normalize(values []float64) (norm []float64, valid bool) {
 // the problem
 func MapFeatures(x [][]float64, degree int) (ret [][]float64) {
 	ret = make([][]float64, len(x))
-	elems := len(x[1])
+	elems := len(x[0])
 	for i := 0; i < len(x); i++ {
 		aux := make([]float64, len(x[i]))
 		copy(aux, x[i])
