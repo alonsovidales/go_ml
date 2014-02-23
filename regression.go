@@ -1,7 +1,7 @@
 package ml
 
 import (
-	"github.com/alonsovidales/matrix"
+	"github.com/alonsovidales/go_matrix"
 	"fmt"
 	"strconv"
 	"math"

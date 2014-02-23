@@ -2,7 +2,7 @@ package ml
 
 import (
 	"fmt"
-	"github.com/alonsovidales/matrix"
+	"github.com/alonsovidales/go_matrix"
 	"io/ioutil"
 	"math"
 	"math/rand"

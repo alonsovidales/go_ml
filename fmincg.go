@@ -2,7 +2,7 @@ package ml
 
 import (
 	"fmt"
-	"github.com/alonsovidales/matrix"
+	"github.com/alonsovidales/go_matrix"
 	"math"
 )
 
@@ -15,7 +15,7 @@ type DataSet interface {
 	rollThetasGrad(x [][][]float64) [][]float64
 	// Returns the thetas rolled by the rollThetasGrad method as it original form
 	unrollThetasGrad(x [][]float64) [][][]float64
-	// Sets the Theta param after convert it to the corresponding interla data structure
+	// Sets the Theta param after convert it to the corresponding internal data structure
 	setTheta(t [][][]float64)
 	// Returns the theta as a 3 dimensional slice
 	getTheta() [][][]float64
@@ -75,6 +75,7 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx []float64,
 	if err != nil {
 		return
 	}
+
 	df1 := nn.rollThetasGrad(df1Tmp)
 	bestTheta := nn.getTheta()
 	minCost := f1
