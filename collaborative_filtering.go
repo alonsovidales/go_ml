@@ -19,6 +19,20 @@ type CollaborativeFilter struct {
 	Theta [][]float64
 	Means []float64
 	Features int
+	Predictions [][]float64
+}
+
+func (cf *CollaborativeFilter) GetPredictionsFor(userPos int) (preds []float64) {
+	preds = make([]float64, len(cf.Ratings))
+	for i, pred := range(cf.Predictions) {
+		preds[i] = pred[userPos] + cf.Means[i]
+	}
+
+	return
+}
+
+func (cf *CollaborativeFilter) MakePredictions() {
+	cf.Predictions = mt.Mult(cf.ItemsTheta, mt.Trans(cf.Theta))
 }
 
 func (cf *CollaborativeFilter) CalcMeans() () {
