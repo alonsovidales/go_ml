@@ -32,7 +32,29 @@ func (cf *CollaborativeFilter) GetPredictionsFor(userPos int) (preds []float64) 
 }
 
 func (cf *CollaborativeFilter) MakePredictions() {
-	cf.Predictions = mt.Mult(cf.ItemsTheta, mt.Trans(cf.Theta))
+	cf.Predictions = mt.MultTrans(cf.ItemsTheta, cf.Theta)
+}
+
+func (cf *CollaborativeFilter) AddUser(votes map[int]float64) {
+	for i := 0; i < len(cf.Ratings); i++ {
+		if score, ok := votes[i]; ok {
+			cf.Ratings[i] = append(cf.Ratings[i], score)
+			cf.AvailableRatings[i] = append(cf.AvailableRatings[i], 1.0)
+		} else {
+			cf.Ratings[i] = append(cf.Ratings[i], 0)
+			cf.AvailableRatings[i] = append(cf.AvailableRatings[i], 0.0)
+		}
+	}
+
+	rand.Seed(int64(time.Now().Nanosecond()))
+	cf.Theta = append(cf.Theta, make([]float64, cf.Features))
+	for i := 0; i < cf.Features; i++ {
+		if rand.Float64() > 0.5 {
+			cf.Theta[len(cf.Theta) - 1][i] = rand.Float64()
+		} else {
+			cf.Theta[len(cf.Theta) - 1][i] = 0 - rand.Float64()
+		}
+	}
 }
 
 func (cf *CollaborativeFilter) CalcMeans() () {
@@ -69,14 +91,7 @@ func (cf *CollaborativeFilter) Normalize() (normRatings [][]float64) {
 }
 
 func (cf *CollaborativeFilter) CostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64, err error) {
-	/*
-		Y => Ratins
-		X => ItemsTheta
-		R => AvailableRatings
-		Theta => Theta
-	*/
-
-	aux := mt.MultElems(mt.Sub(mt.Mult(cf.ItemsTheta, mt.Trans(cf.Theta)), cf.Ratings), cf.AvailableRatings)
+	aux := mt.MultElems(mt.Sub(mt.MultTrans(cf.ItemsTheta, cf.Theta), cf.Ratings), cf.AvailableRatings)
 	j = (mt.SumAll(mt.Apply(aux, powTwo)) / 2) + (lambda / 2 * mt.SumAll(mt.Apply(cf.Theta, powTwo))) + lambda / 2 * mt.SumAll(mt.Apply(cf.ItemsTheta, powTwo))
 	if calcGrad {
 		itemsGrad := mt.Sum(mt.Mult(aux, cf.Theta), mt.MultBy(cf.ItemsTheta, lambda))

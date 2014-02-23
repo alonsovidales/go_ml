@@ -81,7 +81,7 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx []float64,
 	minCost := f1
 
 	s := mt.Apply(df1, neg)                            // search direction is steepest
-	d1 := mt.Mult(mt.Apply(s, neg), mt.Trans(s))[0][0] // this is the slope
+	d1 := mt.MultTrans(mt.Apply(s, neg), s)[0][0] // this is the slope
 	z1 := red / (float64(1) - d1)                      // initial step is red/(|s|+1)
 
 	mainLoop: for i := 0; i < length; i++ {
@@ -95,7 +95,7 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx []float64,
 		nn.setTheta(nn.unrollThetasGrad(x))
 		f2, df2Temp, _ := nn.CostFunction(lambda, true)
 		df2 := nn.rollThetasGrad(df2Temp)
-		d2 := mt.Mult(df2, mt.Trans(s))[0][0]
+		d2 := mt.MultTrans(df2, s)[0][0]
 
 		if f2 < minCost {
 			bestTheta = nn.getTheta()
@@ -137,7 +137,7 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx []float64,
 				}
 
 				m--
-				d2 = mt.Mult(df2, mt.Trans(s))[0][0]
+				d2 = mt.MultTrans(df2, s)[0][0]
 				z3 -= z2
 			}
 
@@ -189,7 +189,7 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx []float64,
 			df2 = nn.rollThetasGrad(df2Temp)
 
 			m--
-			d2 = mt.Mult(df2, mt.Trans(s))[0][0]
+			d2 = mt.MultTrans(df2, s)[0][0]
 		}
 
 		if success {
@@ -200,17 +200,17 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx []float64,
 			}
 
 			// Polack-Ribiere direction
-			s = mt.Sub(mt.MultBy(s, (mt.Mult(df2, mt.Trans(df2))[0][0]-mt.Mult(df1, mt.Trans(df2))[0][0])/mt.Mult(df1, mt.Trans(df1))[0][0]), df2)
+			s = mt.Sub(mt.MultBy(s, (mt.MultTrans(df2, df2)[0][0]-mt.MultTrans(df1, df2)[0][0])/mt.MultTrans(df1, df1)[0][0]), df2)
 
 			// swap derivatives
 			tmp := df1
 			df1 = df2
 			df2 = tmp
 
-			d2 = mt.Mult(df1, mt.Trans(s))[0][0]
+			d2 = mt.MultTrans(df1, s)[0][0]
 			if d2 > 0 {
 				s = mt.Apply(df1, neg)
-				d2 = mt.Mult(mt.Apply(s, neg), mt.Trans(s))[0][0]
+				d2 = mt.MultTrans(mt.Apply(s, neg), s)[0][0]
 			}
 			z1 = z1 * math.Min(ratio, d1/d2)
 			d1 = d2
@@ -227,7 +227,7 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx []float64,
 			df1 = df2
 			df2 = tmp
 			s = mt.Apply(df1, neg) // try steepest
-			d1 = mt.Mult(mt.Apply(s, neg), mt.Trans(s))[0][0]
+			d1 = mt.MultTrans(mt.Apply(s, neg), s)[0][0]
 			z1 = red / (float64(1) - d1)
 			lsFailed = true
 		}

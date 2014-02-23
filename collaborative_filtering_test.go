@@ -3,7 +3,7 @@ package ml
 import (
 	"testing"
 	"fmt"
-	//"sort"
+	"sort"
 )
 
 type movie struct {
@@ -14,15 +14,15 @@ type moviesSort struct {
 	movies []*movie
 }
 
-/*func (movies moviesSort) Len() int {
+func (movies moviesSort) Len() int {
 	return len(movies.movies)
 }
 func (movies moviesSort) Swap(i, j int) {
 	movies.movies[i], movies.movies[j] = movies.movies[j], movies.movies[i]
 }
 func (movies moviesSort) Less(i, j int) bool {
-	return movies.movies[i].Score > movies.movies[j].Score
-}*/
+	return movies.movies[i].Score < movies.movies[j].Score
+}
 
 func TestCollFilteringCostFunc(t *testing.T) {
 	fmt.Println("Testing Collavorative Fitlers Cost Function...")
@@ -80,32 +80,25 @@ func TestCollFiltering(t *testing.T) {
 		t.Error("Error loading the info from test files:", err)
 	}
 
-	userClassif := make([]float64, len(cf.Ratings))
-	userClassif[0] = 4
-	userClassif[97] = 2
-	userClassif[6] = 3
-	userClassif[11] = 5
-	userClassif[53] = 4
-	userClassif[63] = 5
-	userClassif[65] = 3
-	userClassif[68] = 5
-	userClassif[182] = 4
-	userClassif[225] = 5
-	userClassif[354] = 5
-
-	for i := 0; i < len(cf.Ratings); i++ {
-		cf.Ratings[i] = append(cf.Ratings[i], userClassif[i])
-		if userClassif[i] == 0 {
-			cf.AvailableRatings[i] = append(cf.AvailableRatings[i], 0.0)
-		} else {
-			cf.AvailableRatings[i] = append(cf.AvailableRatings[i], 1.0)
-		}
-	}
-
 	cf.InitializeThetas(10)
-	//cf.Ratings = cf.Normalize()
 	cf.CalcMeans()
 	Fmincg(cf, 10, 100, true)
+
+	cf.AddUser(map[int]float64{
+		0: 4,
+		97: 2,
+		6: 3,
+		11: 5,
+		53: 4,
+		63: 5,
+		65: 3,
+		68: 5,
+		182: 4,
+		225: 5,
+		354: 5,
+	})
+
+	Fmincg(cf, 10, 10, true)
 	cf.MakePredictions()
 	preds := cf.GetPredictionsFor(len(cf.AvailableRatings[0]) - 1)
 
@@ -120,5 +113,17 @@ func TestCollFiltering(t *testing.T) {
 	}
 	if preds[317] < 8 {
 		t.Error("Error, the movie 317 was scored with:", preds[317], "and the expected score should to be > 8")
+	}
+
+	movies := new(moviesSort)
+	for i, pred := range(preds) {
+		movies.movies = append(movies.movies, &movie{
+			Score: pred,
+			Id: i,
+		})
+	}
+	sort.Sort(movies)
+	for _, movie := range(movies.movies) {
+		fmt.Println(movie.Id, movie.Score)
 	}
 }
