@@ -17,11 +17,13 @@ type CollaborativeFilter struct {
 	// Martrix with items and features
 	ItemsTheta [][]float64
 	Theta [][]float64
+	// Used for mean normalization, will store the mean ratings for all the items
 	Means []float64
 	Features int
 	Predictions [][]float64
 }
 
+// Returns the predictions for a single user in the given position
 func (cf *CollaborativeFilter) GetPredictionsFor(userPos int) (preds []float64) {
 	preds = make([]float64, len(cf.Ratings))
 	for i, pred := range(cf.Predictions) {
@@ -31,10 +33,13 @@ func (cf *CollaborativeFilter) GetPredictionsFor(userPos int) (preds []float64) 
 	return
 }
 
+// Prepare the predictions for all the users
 func (cf *CollaborativeFilter) MakePredictions() {
 	cf.Predictions = mt.MultTrans(cf.ItemsTheta, cf.Theta)
 }
 
+// Adds a single user ratings to the user ratings matrix and prepares the theta
+// parameters, to calculate the recommendations for this user
 func (cf *CollaborativeFilter) AddUser(votes map[int]float64) {
 	for i := 0; i < len(cf.Ratings); i++ {
 		if score, ok := votes[i]; ok {
@@ -57,6 +62,7 @@ func (cf *CollaborativeFilter) AddUser(votes map[int]float64) {
 	}
 }
 
+// Calculate the means for all the items and store them
 func (cf *CollaborativeFilter) CalcMeans() () {
 	cf.Means = make([]float64, len(cf.Ratings))
 	width := len(cf.Ratings[0])
@@ -72,6 +78,8 @@ func (cf *CollaborativeFilter) CalcMeans() () {
 	}
 }
 
+// Normalize the rating of the users, this method doesn't update the ratings
+// in the objects, just returns them
 func (cf *CollaborativeFilter) Normalize() (normRatings [][]float64) {
 	if len(cf.Means) == 0 {
 		cf.CalcMeans()
@@ -90,6 +98,7 @@ func (cf *CollaborativeFilter) Normalize() (normRatings [][]float64) {
 	return
 }
 
+// Cost function for the collaborative filter
 func (cf *CollaborativeFilter) CostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64, err error) {
 	aux := mt.MultElems(mt.Sub(mt.MultTrans(cf.ItemsTheta, cf.Theta), cf.Ratings), cf.AvailableRatings)
 	j = (mt.SumAll(mt.Apply(aux, powTwo)) / 2) + (lambda / 2 * mt.SumAll(mt.Apply(cf.Theta, powTwo))) + lambda / 2 * mt.SumAll(mt.Apply(cf.ItemsTheta, powTwo))
@@ -106,6 +115,7 @@ func (cf *CollaborativeFilter) CostFunction(lambda float64, calcGrad bool) (j fl
 	return
 }
 
+// Returns the both thetas as a one dimensin matrix to be used by the fmincg method
 func (cf *CollaborativeFilter) rollThetasGrad(x [][][]float64) [][]float64 {
 	values := make([]float64, len(cf.ItemsTheta) * len(cf.ItemsTheta[0]) + len(cf.Theta) * len(cf.Theta[0]))
 	for i := 0; i < len(cf.ItemsTheta); i++ {
@@ -125,6 +135,7 @@ func (cf *CollaborativeFilter) rollThetasGrad(x [][][]float64) [][]float64 {
 	}
 }
 
+// Returns the thetas from the one dim matrix to be used in the object
 func (cf *CollaborativeFilter) unrollThetasGrad(x [][]float64) (result [][][]float64) {
 	result = make([][][]float64, 2)
 	result[0] = make([][]float64, len(cf.ItemsTheta))
@@ -146,11 +157,13 @@ func (cf *CollaborativeFilter) unrollThetasGrad(x [][]float64) (result [][][]flo
 	return
 }
 
+// Sets the both thetas
 func (cf *CollaborativeFilter) setTheta(t [][][]float64) {
 	cf.ItemsTheta = t[0]
 	cf.Theta = t[1]
 }
 
+// Returns the thetas as a multidim array to be used by the fmincg method
 func (cf *CollaborativeFilter) getTheta() [][][]float64 {
 	return [][][]float64{
 		cf.ItemsTheta,
@@ -158,6 +171,7 @@ func (cf *CollaborativeFilter) getTheta() [][][]float64 {
 	}
 }
 
+// Random initialization of the thetas for the given features
 func (cf *CollaborativeFilter) InitializeThetas(features int) {
 	cf.Features = features
 	rand.Seed(int64(time.Now().Nanosecond()))
@@ -187,6 +201,7 @@ func (cf *CollaborativeFilter) InitializeThetas(features int) {
 	}
 }
 
+// Loads the information from the CSV space separated files for the collaborative filter
 func NewCollFilterFromCsv(ratingsSrc string, availableRatings string, itemsTheta string, theta string) (result *CollaborativeFilter, err error) {
 	result = new(CollaborativeFilter)
 	// Parse the Ratings params

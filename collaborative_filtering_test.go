@@ -3,10 +3,10 @@ package ml
 import (
 	"testing"
 	"fmt"
-	"sort"
+	//"sort"
 )
 
-type movie struct {
+/*type movie struct {
 	Score float64
 	Id int
 }
@@ -22,7 +22,7 @@ func (movies moviesSort) Swap(i, j int) {
 }
 func (movies moviesSort) Less(i, j int) bool {
 	return movies.movies[i].Score < movies.movies[j].Score
-}
+}*/
 
 func TestCollFilteringCostFunc(t *testing.T) {
 	fmt.Println("Testing Collavorative Fitlers Cost Function...")
@@ -102,20 +102,20 @@ func TestCollFiltering(t *testing.T) {
 	cf.MakePredictions()
 	preds := cf.GetPredictionsFor(len(cf.AvailableRatings[0]) - 1)
 
-	if preds[49] < 8 {
-		t.Error("Error, the movie 49 was scored with:", preds[49], "and the expected score should to be > 8")
+	if preds[49] < 7.5 {
+		t.Error("Error, the movie 49 was scored with:", preds[49], "and the expected score should to be > 7.5")
 	}
-	if preds[312] < 8 {
-		t.Error("Error, the movie 312 was scored with:", preds[312], "and the expected score should to be > 8")
+	if preds[312] < 7.5 {
+		t.Error("Error, the movie 312 was scored with:", preds[312], "and the expected score should to be > 7.5")
 	}
-	if preds[173] < 8 {
-		t.Error("Error, the movie 173 was scored with:", preds[173], "and the expected score should to be > 8")
+	if preds[173] < 7.5 {
+		t.Error("Error, the movie 173 was scored with:", preds[173], "and the expected score should to be > 7.5")
 	}
-	if preds[317] < 8 {
-		t.Error("Error, the movie 317 was scored with:", preds[317], "and the expected score should to be > 8")
+	if preds[317] < 7.5 {
+		t.Error("Error, the movie 317 was scored with:", preds[317], "and the expected score should to be > 7.5")
 	}
 
-	movies := new(moviesSort)
+	/*movies := new(moviesSort)
 	for i, pred := range(preds) {
 		movies.movies = append(movies.movies, &movie{
 			Score: pred,
@@ -125,5 +125,5 @@ func TestCollFiltering(t *testing.T) {
 	sort.Sort(movies)
 	for _, movie := range(movies.movies) {
 		fmt.Println(movie.Id, movie.Score)
-	}
+	}*/
 }
