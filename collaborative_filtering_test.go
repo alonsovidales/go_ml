@@ -1,8 +1,8 @@
 package ml
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 	//"sort"
 )
 
@@ -27,7 +27,7 @@ func (movies moviesSort) Less(i, j int) bool {
 func TestCollFilteringCostFunc(t *testing.T) {
 	fmt.Println("Testing Collavorative Fitlers Cost Function...")
 
-	cf := &CollaborativeFilter {
+	cf := &CollaborativeFilter{
 		Ratings: [][]float64{
 			[]float64{5, 4, 0, 0},
 			[]float64{3, 0, 0, 0},
@@ -35,7 +35,7 @@ func TestCollFilteringCostFunc(t *testing.T) {
 			[]float64{3, 0, 0, 0},
 			[]float64{3, 0, 0, 0},
 		},
-		AvailableRatings: [][]float64 {
+		AvailableRatings: [][]float64{
 			[]float64{1, 1, 0, 0},
 			[]float64{1, 0, 0, 0},
 			[]float64{1, 0, 0, 0},
@@ -85,14 +85,14 @@ func TestCollFiltering(t *testing.T) {
 	Fmincg(cf, 10, 100, true)
 
 	cf.AddUser(map[int]float64{
-		0: 4,
-		97: 2,
-		6: 3,
-		11: 5,
-		53: 4,
-		63: 5,
-		65: 3,
-		68: 5,
+		0:   4,
+		97:  2,
+		6:   3,
+		11:  5,
+		53:  4,
+		63:  5,
+		65:  3,
+		68:  5,
 		182: 4,
 		225: 5,
 		354: 5,
@@ -101,6 +101,7 @@ func TestCollFiltering(t *testing.T) {
 	Fmincg(cf, 10, 10, true)
 	cf.MakePredictions()
 	preds := cf.GetPredictionsFor(len(cf.AvailableRatings[0]) - 1)
+	//fmt.Println(preds)
 
 	if preds[49] < 7.5 {
 		t.Error("Error, the movie 49 was scored with:", preds[49], "and the expected score should to be > 7.5")

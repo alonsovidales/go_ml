@@ -93,6 +93,54 @@ func PrepareX(x [][]float64, degree int) (newX [][]float64)
 
 TYPES
 
+type CollaborativeFilter struct {
+    // User ratios by item (rows), and user (cols)
+    Ratings [][]float64
+    // Matrix for classified or not items by user, use 0.0 for unclissified, 1.0 for classified
+    AvailableRatings [][]float64
+    // Martrix with items and features
+    ItemsTheta [][]float64
+    Theta      [][]float64
+    // Used for mean normalization, will store the mean ratings for all the items
+    Means       []float64
+    Features    int
+    Predictions [][]float64
+}
+    Collaborative filtering implementation, this algorithm is able to
+    determine the items with a best fit for items not yet rated in a matrix
+    of users and items calcifications:
+    http://en.wikipedia.org/wiki/Collaborative_filtering
+
+
+func NewCollFilterFromCsv(ratingsSrc string, availableRatings string, itemsTheta string, theta string) (result *CollaborativeFilter, err error)
+    Loads the information from the CSV space separated files for the
+    collaborative filter
+
+
+func (cf *CollaborativeFilter) AddUser(votes map[int]float64)
+    Adds a single user ratings to the user ratings matrix and prepares the
+    theta parameters, to calculate the recommendations for this user
+
+func (cf *CollaborativeFilter) CalcMeans()
+    Calculate the means for all the items and store them
+
+func (cf *CollaborativeFilter) CostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64, err error)
+    Cost function for the collaborative filter
+
+func (cf *CollaborativeFilter) GetPredictionsFor(userPos int) (preds []float64)
+    Returns the predictions for a single user in the given position
+
+func (cf *CollaborativeFilter) InitializeThetas(features int)
+    Random initialization of the thetas for the given features
+
+func (cf *CollaborativeFilter) MakePredictions()
+    Prepare the predictions for all the users
+
+func (cf *CollaborativeFilter) Normalize() (normRatings [][]float64)
+    Normalize the rating of the users, this method doesn't update the
+    ratings in the objects, just returns them
+
+
 type DataSet interface {
     // Returns the cost and gradients for the current thetas configuration
     CostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64, err error)
@@ -218,5 +266,6 @@ func (data *Regression) MinimizeCost(maxIters int, suffleData bool, verbose bool
 
 SUBDIRECTORIES
 
+	src
 	test_data
 

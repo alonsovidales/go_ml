@@ -41,7 +41,7 @@ func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, gra
 		return
 	}
 
-	if len(nn.Theta[len(nn.Theta) - 1]) != len(nn.Y[0]) {
+	if len(nn.Theta[len(nn.Theta)-1]) != len(nn.Y[0]) {
 		err = fmt.Errorf(
 			"The length of the last theta layer should to correspond with the length of the expected results")
 		return
@@ -136,7 +136,8 @@ func (nn *NeuralNet) GetPerformance(verbose bool) (cost float64, performance flo
 			}
 		}
 
-		checkHip: for h := 0; h < len(prediction); h++ {
+	checkHip:
+		for h := 0; h < len(prediction); h++ {
 			if nn.Y[i][h] != prediction[h] {
 				match = false
 				break checkHip

@@ -3,30 +3,33 @@ package ml
 import (
 	"github.com/alonsovidales/go_matrix"
 	"io/ioutil"
-	"strings"
-	"strconv"
 	"math/rand"
+	"strconv"
+	"strings"
 	"time"
 )
 
+// Collaborative filtering implementation, this algorithm is able to determine
+// the items with a best fit for items not yet rated in a matrix of users and
+// items calcifications: http://en.wikipedia.org/wiki/Collaborative_filtering
 type CollaborativeFilter struct {
 	// User ratios by item (rows), and user (cols)
-	Ratings [][]float64
+	Ratings     [][]float64
 	// Matrix for classified or not items by user, use 0.0 for unclissified, 1.0 for classified
 	AvailableRatings [][]float64
 	// Martrix with items and features
-	ItemsTheta [][]float64
-	Theta [][]float64
+	ItemsTheta  [][]float64
+	Theta       [][]float64
 	// Used for mean normalization, will store the mean ratings for all the items
-	Means []float64
-	Features int
+	Means       []float64
+	Features    int
 	Predictions [][]float64
 }
 
 // Returns the predictions for a single user in the given position
 func (cf *CollaborativeFilter) GetPredictionsFor(userPos int) (preds []float64) {
 	preds = make([]float64, len(cf.Ratings))
-	for i, pred := range(cf.Predictions) {
+	for i, pred := range cf.Predictions {
 		preds[i] = pred[userPos] + cf.Means[i]
 	}
 
@@ -55,15 +58,15 @@ func (cf *CollaborativeFilter) AddUser(votes map[int]float64) {
 	cf.Theta = append(cf.Theta, make([]float64, cf.Features))
 	for i := 0; i < cf.Features; i++ {
 		if rand.Float64() > 0.5 {
-			cf.Theta[len(cf.Theta) - 1][i] = rand.Float64()
+			cf.Theta[len(cf.Theta)-1][i] = rand.Float64()
 		} else {
-			cf.Theta[len(cf.Theta) - 1][i] = 0 - rand.Float64()
+			cf.Theta[len(cf.Theta)-1][i] = 0 - rand.Float64()
 		}
 	}
 }
 
 // Calculate the means for all the items and store them
-func (cf *CollaborativeFilter) CalcMeans() () {
+func (cf *CollaborativeFilter) CalcMeans() {
 	cf.Means = make([]float64, len(cf.Ratings))
 	width := len(cf.Ratings[0])
 	for i := 0; i < len(cf.Ratings); i++ {
@@ -101,7 +104,7 @@ func (cf *CollaborativeFilter) Normalize() (normRatings [][]float64) {
 // Cost function for the collaborative filter
 func (cf *CollaborativeFilter) CostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64, err error) {
 	aux := mt.MultElems(mt.Sub(mt.MultTrans(cf.ItemsTheta, cf.Theta), cf.Ratings), cf.AvailableRatings)
-	j = (mt.SumAll(mt.Apply(aux, powTwo)) / 2) + (lambda / 2 * mt.SumAll(mt.Apply(cf.Theta, powTwo))) + lambda / 2 * mt.SumAll(mt.Apply(cf.ItemsTheta, powTwo))
+	j = (mt.SumAll(mt.Apply(aux, powTwo)) / 2) + (lambda / 2 * mt.SumAll(mt.Apply(cf.Theta, powTwo))) + lambda/2*mt.SumAll(mt.Apply(cf.ItemsTheta, powTwo))
 	if calcGrad {
 		itemsGrad := mt.Sum(mt.Mult(aux, cf.Theta), mt.MultBy(cf.ItemsTheta, lambda))
 		thetaGrad := mt.Sum(mt.Mult(mt.Trans(aux), cf.ItemsTheta), mt.MultBy(cf.Theta, lambda))
@@ -117,16 +120,16 @@ func (cf *CollaborativeFilter) CostFunction(lambda float64, calcGrad bool) (j fl
 
 // Returns the both thetas as a one dimensin matrix to be used by the fmincg method
 func (cf *CollaborativeFilter) rollThetasGrad(x [][][]float64) [][]float64 {
-	values := make([]float64, len(cf.ItemsTheta) * len(cf.ItemsTheta[0]) + len(cf.Theta) * len(cf.Theta[0]))
+	values := make([]float64, len(cf.ItemsTheta)*len(cf.ItemsTheta[0])+len(cf.Theta)*len(cf.Theta[0]))
 	for i := 0; i < len(cf.ItemsTheta); i++ {
 		for j := 0; j < len(cf.ItemsTheta[0]); j++ {
-			values[(i * len(cf.ItemsTheta[0])) + j] = x[0][i][j]
+			values[(i*len(cf.ItemsTheta[0]))+j] = x[0][i][j]
 		}
 	}
 
 	for i := 0; i < len(cf.Theta); i++ {
 		for j := 0; j < len(cf.Theta[0]); j++ {
-			values[(len(cf.ItemsTheta) * len(cf.ItemsTheta[0])) + (i * len(cf.Theta[0])) + j] = x[1][i][j]
+			values[(len(cf.ItemsTheta)*len(cf.ItemsTheta[0]))+(i*len(cf.Theta[0]))+j] = x[1][i][j]
 		}
 	}
 
@@ -142,7 +145,7 @@ func (cf *CollaborativeFilter) unrollThetasGrad(x [][]float64) (result [][][]flo
 	for i := 0; i < len(cf.ItemsTheta); i++ {
 		result[0][i] = make([]float64, len(cf.ItemsTheta[0]))
 		for j := 0; j < len(cf.ItemsTheta[0]); j++ {
-			result[0][i][j] = x[0][(i * len(cf.ItemsTheta[0])) + j]
+			result[0][i][j] = x[0][(i*len(cf.ItemsTheta[0]))+j]
 		}
 	}
 
@@ -150,7 +153,7 @@ func (cf *CollaborativeFilter) unrollThetasGrad(x [][]float64) (result [][][]flo
 	for i := 0; i < len(cf.Theta); i++ {
 		result[1][i] = make([]float64, len(cf.Theta[0]))
 		for j := 0; j < len(cf.Theta[0]); j++ {
-			result[1][i][j] = x[0][(len(cf.ItemsTheta) * len(cf.ItemsTheta[0])) + (i * len(cf.Theta[0])) + j]
+			result[1][i][j] = x[0][(len(cf.ItemsTheta)*len(cf.ItemsTheta[0]))+(i*len(cf.Theta[0]))+j]
 		}
 	}
 
@@ -225,7 +228,6 @@ func NewCollFilterFromCsv(ratingsSrc string, availableRatings string, itemsTheta
 		}
 		result.Ratings = append(result.Ratings, values)
 	}
-
 
 	// Parse the Ratings params
 	strInfo, err = ioutil.ReadFile(availableRatings)
