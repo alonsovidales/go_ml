@@ -1,7 +1,7 @@
 PACKAGE DOCUMENTATION
 
 package ml
-    import "."
+    import "github.com/alonsovidales/go_ml"
 
     Package ml provides some implementations of usefull machine learning
     algorithms for data mining and data analysis.
