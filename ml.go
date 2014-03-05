@@ -5,6 +5,7 @@
 //    - Linear Regression
 //    - Logistic Regression
 //    - Neural Networks
+//    - Collaborative Filtering
 //
 // Is implemented too the fmincg function in order to calculate the optimal
 // theta configuration to reduce the cost value for all the implemented solutions.
