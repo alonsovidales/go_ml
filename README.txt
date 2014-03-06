@@ -262,11 +262,3 @@ func (data *Regression) MinimizeCost(maxIters int, suffleData bool, verbose bool
     different possibilities and the training data, and check the best match
     with the cross validations, after obtain the best lambda, check the
     perfomand against the test set of data
-
-
-
-SUBDIRECTORIES
-
-	src
-	test_data
-
