@@ -45,9 +45,11 @@ func (gd *MultGaussianDist) CalculateMuSigma() {
 // p(x) < epsilon, you may have an anomaly, you can use SelectThreshold in
 // in order to calculate the best epsilon
 func (gd *MultGaussianDist) GetProbability(data [][]float64) (p []float64) {
+	d := make([][]float64, len(data))
 	for i := 0; i < len(data); i++ {
+		d[i] = make([]float64, len(data[i]))
 		for c := 0; c < len(data[0]); c++ {
-			data[i][c] -= gd.Mu[c]
+			d[i][c] = data[i][c] - gd.Mu[c]
 		}
 	}
 
@@ -56,11 +58,11 @@ func (gd *MultGaussianDist) GetProbability(data [][]float64) (p []float64) {
 		detSig *= gd.Sigma2[i]
 	}
 
-	base := math.Pow(2*math.Pi, -(float64(len(data[0])))/2) * math.Pow(detSig, -0.5)
-	p = make([]float64, len(data))
-	for i := 0; i < len(data); i++ {
-		for c := 0; c < len(data[0]); c++ {
-			p[i] += -0.5 * data[i][c] * data[i][c] * (1 / gd.Sigma2[c])
+	base := math.Pow(2*math.Pi, -(float64(len(d[0])))/2) * math.Pow(detSig, -0.5)
+	p = make([]float64, len(d))
+	for i := 0; i < len(d); i++ {
+		for c := 0; c < len(d[0]); c++ {
+			p[i] += -0.5 * d[i][c] * d[i][c] * (1 / gd.Sigma2[c])
 		}
 		p[i] = base * math.Pow(math.E, p[i])
 	}
