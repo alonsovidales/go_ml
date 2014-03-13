@@ -12,6 +12,7 @@ package ml
 	- Logistic Regression
 	- Neural Networks
 	- Collaborative Filtering
+	- Gaussian Multivariate Distribution for anomaly detection systems
 
     Is implemented too the fmincg function in order to calculate the optimal
     theta configuration to reduce the cost value for all the implemented
@@ -150,6 +151,32 @@ type DataSet interface {
     Interface to be implemented by the machine learning algorithms to be
     used by the Fmincg function in order to reduce the cost
 
+
+
+type MultGaussianDist struct {
+    X      [][]float64 // Data to train the gussian distribution
+    Sigma2 []float64
+    Mu     []float64 // Medians for each feature
+}
+    Anomaly detection implementation using Multivariate Gaussian
+    Distribution:
+    http://en.wikipedia.org/wiki/Multivariate_normal_distribution#Density_function
+
+
+func MultVarGaussianDistLoadFromFile(filePath string) (gd *MultGaussianDist)
+    Creates a MultGaussianDist object from the content of a CSV file space
+    sepparate where each line is a sample and each column a feature
+
+
+func (gd *MultGaussianDist) CalculateMuSigma()
+    To be called before GetProbability method in order to calculate the
+    medians and sigmas params for all the training set
+
+func (gd *MultGaussianDist) GetProbability(data [][]float64) (p []float64)
+    Returns the probability of anomaly for each data, each row of data is a
+    sample to study and each colum a featurea, determinate an epsilon and
+    when p(x) < epsilon, you may have an anomaly, you can use
+    SelectThreshold in in order to calculate the best epsilon
 
 
 type NeuralNet struct {

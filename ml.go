@@ -6,6 +6,7 @@
 //    - Logistic Regression
 //    - Neural Networks
 //    - Collaborative Filtering
+//    - Gaussian Multivariate Distribution for anomaly detection systems
 //
 // Is implemented too the fmincg function in order to calculate the optimal
 // theta configuration to reduce the cost value for all the implemented solutions.
