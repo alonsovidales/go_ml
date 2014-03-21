@@ -22,8 +22,8 @@ type NeuralNet struct {
 	Theta [][][]float64
 }
 
-// Calcualtes the cost function for the training set stored in the X and Y
-// properties of the instance, and with the theta configuration.
+// CostFunction Calcualtes the cost function for the training set stored in the
+// X and Y properties of the instance, and with the theta configuration.
 // The lambda parameter controls the degree of regularization (0 means
 // no-regularization, infinity means ignoring all input variables because all
 // coefficients of them will be zero)
@@ -31,7 +31,7 @@ type NeuralNet struct {
 // cost, and in case of false, only calculates the cost
 func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64, err error) {
 	if len(nn.Y) == 0 || len(nn.X) == 0 || len(nn.Theta) == 0 {
-		err = fmt.Errorf("The lenght of the X, Y or Theta params are zero")
+		err = fmt.Errorf("the lenght of the X, Y or Theta params are zero")
 		return
 	}
 
@@ -43,7 +43,7 @@ func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, gra
 
 	if len(nn.Theta[len(nn.Theta)-1]) != len(nn.Y[0]) {
 		err = fmt.Errorf(
-			"The length of the last theta layer should to correspond with the length of the expected results")
+			"the length of the last theta layer should to correspond with the length of the expected results")
 		return
 	}
 
@@ -120,8 +120,8 @@ func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, gra
 	return
 }
 
-// Returns the performance of the neural network with the current set of samples.
-// The performance is calculated as: matches / total_samples
+// GetPerformance Returns the performance of the neural network with the current
+// set of samples. The performance is calculated as: matches / total_samples
 func (nn *NeuralNet) GetPerformance(verbose bool) (cost float64, performance float64) {
 	matches := 0.0
 	for i := 0; i < len(nn.X); i++ {
@@ -155,8 +155,8 @@ func (nn *NeuralNet) GetPerformance(verbose bool) (cost float64, performance flo
 	return
 }
 
-// Returns the hipotesis calculation for the sample "x" using the thetas of
-// nn.Theta
+// Hipotesis returns the hipotesis calculation for the sample "x" using the
+// thetas of nn.Theta
 func (nn *NeuralNet) Hipotesis(x []float64) (result []float64) {
 	aux := [][]float64{x}
 
@@ -167,7 +167,7 @@ func (nn *NeuralNet) Hipotesis(x []float64) (result []float64) {
 	return aux[0]
 }
 
-// Random inizialization of the thetas to break the simetry.
+// InitializeThetas Random inizialization of the thetas to break the simetry.
 // The slice "layerSizes" will contain on each element, the size of the layer to
 // be initialized, the first layer is the input one, and last layer will
 // correspond to the output layer
@@ -194,9 +194,9 @@ func (nn *NeuralNet) InitializeThetas(layerSizes []int) {
 	return
 }
 
-// This metod splits the samples contained in the NeuralNet instance in three
-// sets (60%, 20%, 20%): training, cross validation and test. In order to
-// calculate the optimal theta, after try with different lambda values on the
+// MinimizeCost This metod splits the samples contained in the NeuralNet instance
+// in three sets (60%, 20%, 20%): training, cross validation and test. In order
+// to calculate the optimal theta, after try with different lambda values on the
 // training set and compare the performance obtained with the cross validation
 // set to get the lambda with a better performance in the cross validation set.
 // After calculate the best lambda, merges the training and cross validation
@@ -204,6 +204,7 @@ func (nn *NeuralNet) InitializeThetas(layerSizes []int) {
 // The data can be shuffled in order to obtain a better distribution before
 // divide it in groups
 func (nn *NeuralNet) MinimizeCost(maxIters int, suffleData bool, verbose bool) (finalCost float64, performance float64, trainingData *NeuralNet, testData *NeuralNet) {
+
 	lambdas := []float64{0.0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300}
 
 	if suffleData {
@@ -272,8 +273,8 @@ func (nn *NeuralNet) MinimizeCost(maxIters int, suffleData bool, verbose bool) (
 	return
 }
 
-// Loads the informaton contained in the specified file paths and returns a
-// NeuralNet instance.
+// NewNeuralNetFromCsv Loads the informaton contained in the specified file
+// paths and returns a NeuralNet instance.
 // Each input file should contain a row by sample, and the values separated by a
 // single space.
 // To load the thetas specify on thetaSrc the file paths that contains each of
@@ -365,7 +366,8 @@ func NewNeuralNetFromCsv(xSrc string, ySrc string, thetaSrc []string) (result *N
 	return
 }
 
-// Store all the current theta values of the instance in the "targetDir" directory.
+// SaveThetas Store all the current theta values of the instance in the
+// "targetDir" directory.
 // This method will create a file for each layer of theta called theta_X.txt
 // where X is the layer contained on the file.
 func (nn *NeuralNet) SaveThetas(targetDir string) (files []string) {
@@ -393,8 +395,8 @@ func (nn *NeuralNet) SaveThetas(targetDir string) (files []string) {
 	return
 }
 
-// Returns a copy of the "m" two dim slice with a one added at the beginning of
-// each row
+// addBias Returns a copy of the "m" two dim slice with a one added at the
+// beginning of each row
 func addBias(m [][]float64) (result [][]float64) {
 	result = make([][]float64, len(m))
 
@@ -405,8 +407,8 @@ func addBias(m [][]float64) (result [][]float64) {
 	return
 }
 
-// Returns a copy of the "theta" two dim slice allocated in a separate memory
-// space
+// copyTheta Returns a copy of the "theta" two dim slice allocated in a separate
+// memory space
 func copyTheta(theta [][][]float64) (copyTheta [][][]float64) {
 	copyTheta = make([][][]float64, len(theta))
 	for i := 0; i < len(theta); i++ {
@@ -426,7 +428,8 @@ func (nn *NeuralNet) getTheta() [][][]float64 {
 	return nn.Theta
 }
 
-// Returns a copy of the given two dim slice without the firs element of each row
+// removeBias Returns a copy of the given two dim slice without the firs element
+// of each row
 func removeBias(x [][]float64) (result [][]float64) {
 	result = make([][]float64, len(x))
 	for i := 0; i < len(x); i++ {
@@ -436,7 +439,7 @@ func removeBias(x [][]float64) (result [][]float64) {
 	return
 }
 
-// Returns a 1 x n matrix with the thetas concatenated
+// rollThetasGrad returns a 1 x n matrix with the thetas concatenated
 func (nn *NeuralNet) rollThetasGrad(x [][][]float64) [][]float64 {
 	result := []float64{}
 	for i := 0; i < len(x); i++ {
@@ -454,7 +457,7 @@ func (nn *NeuralNet) setTheta(t [][][]float64) {
 	nn.Theta = t
 }
 
-// Redistribute randomly all the X and Y rows of the instance
+// shuffle redistribute randomly all the X and Y rows of the instance
 func (nn *NeuralNet) shuffle() (shuffledData *NeuralNet) {
 	aux := make([][]float64, len(nn.X))
 
@@ -489,7 +492,7 @@ func sigmoidGradient(x float64) float64 {
 	return sigmoid(x) * (1 - sigmoid(x))
 }
 
-// Returns the 1 x n matrix as the multilayer theta way
+// unrollThetasGrad Returns the 1 x n matrix as the multilayer theta way
 func (nn *NeuralNet) unrollThetasGrad(x [][]float64) (r [][][]float64) {
 	pos := 0
 	r = make([][][]float64, len(nn.Theta))

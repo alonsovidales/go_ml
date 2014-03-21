@@ -20,8 +20,8 @@ type Regression struct {
 	LinearReg bool // true indicates that this is a linear regression problem, false a logistic regression one
 }
 
-// Calcualtes the cost function for the training set stored in the X and Y
-// properties of the instance, and with the theta configuration.
+// CostFunction Calcualtes the cost function for the training set stored in the
+// X and Y properties of the instance, and with the theta configuration.
 // The lambda parameter controls the degree of regularization (0 means
 // no-regularization, infinity means ignoring all input variables because all
 // coefficients of them will be zero)
@@ -30,7 +30,7 @@ type Regression struct {
 func (lr *Regression) CostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64, err error) {
 	if len(lr.Y) != len(lr.X) {
 		err = fmt.Errorf(
-			"The number of test cases (X) %d doesn't corresponds with the number of values (Y) %d",
+			"the number of test cases (X) %d doesn't corresponds with the number of values (Y) %d",
 			len(lr.X),
 			len(lr.Y))
 		return
@@ -38,7 +38,7 @@ func (lr *Regression) CostFunction(lambda float64, calcGrad bool) (j float64, gr
 
 	if len(lr.Theta) != len(lr.X[0]) {
 		err = fmt.Errorf(
-			"The Theta arg has a lenght of %d and the input data %d",
+			"the Theta arg has a lenght of %d and the input data %d",
 			len(lr.Theta),
 			len(lr.X[0]))
 		return
@@ -53,23 +53,27 @@ func (lr *Regression) CostFunction(lambda float64, calcGrad bool) (j float64, gr
 	return
 }
 
-// Initialize the Theta property to an array of zeros with the lenght of the
-// number of features on the X property
+// InitializeTheta Initialize the Theta property to an array of zeros with the
+// lenght of the number of features on the X property
 func (lr *Regression) InitializeTheta() {
 	rand.Seed(int64(time.Now().Nanosecond()))
 	lr.Theta = make([]float64, len(lr.X[0]))
 }
 
-func (data *Regression) LinearHipotesis(x []float64) (r float64) {
+// LinearHipotesis Returns the hipotesis result for Linear Regression algorithm
+// for the thetas in the instance and the specified parameters
+func (rg *Regression) LinearHipotesis(x []float64) (r float64) {
 	for i := 0; i < len(x); i++ {
-		r += x[i] * data.Theta[i]
+		r += x[i] * rg.Theta[i]
 	}
 
 	return
 }
 
-// Returns the cost and gradient for the current instance configuration
+// linearRegCostFunction returns the cost and gradient for the current instance
+// configuration
 func (lr *Regression) linearRegCostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64) {
+
 	auxTheta := make([]float64, len(lr.Theta))
 	copy(auxTheta, lr.Theta)
 	theta := [][]float64{auxTheta}
@@ -88,8 +92,9 @@ func (lr *Regression) linearRegCostFunction(lambda float64, calcGrad bool) (j fl
 }
 
 
-// Loads information from the local file located at filePath, and after parse
-// it, returns the Regression ready to be used with all the information loaded
+// LoadFile loads information from the local file located at filePath, and after
+// parse it, returns the Regression ready to be used with all the information
+// loaded
 // The file format is:
 //      X11 X12 ... X1N Y1
 //      X21 X22 ... X2N Y2
@@ -97,12 +102,12 @@ func (lr *Regression) linearRegCostFunction(lambda float64, calcGrad bool) (j fl
 //      XN1 XN2 ... XNN YN
 //
 // Note: Use a single space as separator
-func LoadFile(filePath string) (data *Regression) {
+func LoadFile(filePath string) (rg *Regression) {
 	strInfo, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		panic(err)
 	}
-	data = new(Regression)
+	rg = new(Regression)
 
 	trainingData := strings.Split(string(strInfo), "\n")
 	for _, line := range trainingData {
@@ -118,26 +123,28 @@ func LoadFile(filePath string) (data *Regression) {
 			}
 			values = append(values, floatVal)
 		}
-		data.X = append(data.X, values[:len(values)-1])
-		data.Y = append(data.Y, values[len(values)-1])
+		rg.X = append(rg.X, values[:len(values)-1])
+		rg.Y = append(rg.Y, values[len(values)-1])
 	}
 
 	return
 }
 
-// Returns the hipotesis result for the thetas in the instance and the specified
-// parameters
-func (data *Regression) LogisticHipotesis(x []float64) (r float64) {
+// LogisticHipotesis returns the hipotesis result for Logistic Regression for
+// the thetas in the instance and the specified parameters
+func (rg *Regression) LogisticHipotesis(x []float64) (r float64) {
 	for i := 0; i < len(x); i++ {
-		r += x[i] * data.Theta[i]
+		r += x[i] * rg.Theta[i]
 	}
 	r = sigmoid(r)
 
 	return
 }
 
-// Returns the cost and gradient for the current instance configuration
+// logisticRegCostFunction returns the cost and gradient for the current
+// instance configuration
 func (lr *Regression) logisticRegCostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64) {
+
 	auxTheta := make([]float64, len(lr.Theta))
 	copy(auxTheta, lr.Theta)
 	theta := [][]float64{auxTheta}
@@ -161,41 +168,41 @@ func (lr *Regression) logisticRegCostFunction(lambda float64, calcGrad bool) (j 
 	return
 }
 
-// This metod splits the given data in three sets: training, cross validation,
-// test. In order to calculate the optimal theta, tries with different
-// possibilities and the training data, and check the best match with the cross
-// validations, after obtain the best lambda, check the perfomand against the
-// test set of data
-func (data *Regression) MinimizeCost(maxIters int, suffleData bool, verbose bool) (finalCost float64, trainingData *Regression, lambda float64, testData *Regression) {
+// MinimizeCost this metod splits the given data in three sets: training, cross
+// validation, test. In order to calculate the optimal theta, tries with
+// different possibilities and the training data, and check the best match with
+// the cross validations, after obtain the best lambda, check the perfomand
+// against the test set of data
+func (rg *Regression) MinimizeCost(maxIters int, suffleData bool, verbose bool) (finalCost float64, trainingData *Regression, lambda float64, testData *Regression) {
 	lambdas := []float64{0.0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300}
 
 	if suffleData {
-		data = data.shuffle()
+		rg = rg.shuffle()
 	}
 
 	// Get the 60% of the data as training data, 20% as cross validation, and
 	// the remaining 20% as test data
-	training := int64(float64(len(data.X)) * 0.6)
-	cv := int64(float64(len(data.X)) * 0.8)
+	training := int64(float64(len(rg.X)) * 0.6)
+	cv := int64(float64(len(rg.X)) * 0.8)
 
 	trainingData = &Regression{
-		X: data.X[:training],
-		Y: data.Y[:training],
-		Theta: data.Theta,
-		LinearReg: data.LinearReg,
+		X: rg.X[:training],
+		Y: rg.Y[:training],
+		Theta: rg.Theta,
+		LinearReg: rg.LinearReg,
 	}
 
 	cvData := &Regression{
-		X: data.X[training:cv],
-		Y: data.Y[training:cv],
-		Theta: data.Theta,
-		LinearReg: data.LinearReg,
+		X: rg.X[training:cv],
+		Y: rg.Y[training:cv],
+		Theta: rg.Theta,
+		LinearReg: rg.LinearReg,
 	}
 	testData = &Regression{
-		X: data.X[cv:],
-		Y: data.Y[cv:],
-		Theta: data.Theta,
-		LinearReg: data.LinearReg,
+		X: rg.X[cv:],
+		Y: rg.Y[cv:],
+		Theta: rg.Theta,
+		LinearReg: rg.LinearReg,
 	}
 
 	// Launch a process for each lambda in order to obtain the one with best
@@ -232,7 +239,7 @@ func (data *Regression) MinimizeCost(maxIters int, suffleData bool, verbose bool
 	Fmincg(trainingData, bestLambda, maxIters, verbose)
 
 	testData.Theta = trainingData.Theta
-	data.Theta = trainingData.Theta
+	rg.Theta = trainingData.Theta
 
 	finalCost, _, _ = testData.CostFunction(bestLambda, false)
 	bestLambda = bestLambda
@@ -248,7 +255,7 @@ func (lr *Regression) getTheta() [][][]float64 {
 	}
 }
 
-// Retuns a 1xn array that will contian the theta of the instance
+// rollThetasGrad retuns a 1xn array that will contian the theta of the instance
 func (lr *Regression) rollThetasGrad(x [][][]float64) [][]float64 {
 	return x[0]
 }
@@ -257,27 +264,27 @@ func (lr *Regression) setTheta(t [][][]float64) {
 	lr.Theta = t[0][0]
 }
 
-// Redistribute randomly all the X and Y rows of the instance
-func (data *Regression) shuffle() (shuffledData *Regression) {
+// shuffle redistribute randomly all the X and Y rows of the instance
+func (rg *Regression) shuffle() (shuffledData *Regression) {
 	rand.Seed(int64(time.Now().Nanosecond()))
 
 	shuffledData = &Regression{
-		X: make([][]float64, len(data.X)),
-		Y: make([]float64, len(data.Y)),
+		X: make([][]float64, len(rg.X)),
+		Y: make([]float64, len(rg.Y)),
 	}
 
-	for i, v := range rand.Perm(len(data.X)) {
-		shuffledData.X[v] = data.X[i]
-		shuffledData.Y[v] = data.Y[i]
+	for i, v := range rand.Perm(len(rg.X)) {
+		shuffledData.X[v] = rg.X[i]
+		shuffledData.Y[v] = rg.Y[i]
 	}
 
-	shuffledData.Theta = data.Theta
+	shuffledData.Theta = rg.Theta
 
 	return
 }
 
-// Converts the given two dim slice to a tree dim slice in order to be used with
-// the Fmincg function
+// unrollThetasGrad converts the given two dim slice to a tree dim slice in order
+// to be used with the Fmincg function
 func (lr *Regression) unrollThetasGrad(x [][]float64) [][][]float64 {
 	return [][][]float64{
 		x,

@@ -25,9 +25,9 @@ import (
 	"math"
 )
 
-// Returns all the values of the given matrix normalized, the formula applied to
-// all the elements is: (Xn - Avg) / (max - min) If all the elements in the
-// slice have the same values, or the slice is empty, the slice can't be
+// Normalize Returns all the values of the given matrix normalized, the formula
+// applied to all the elements is: (Xn - Avg) / (max - min) If all the elements
+// in the slice have the same values, or the slice is empty, the slice can't be
 // normalized, then returns false in the valid parameter
 func Normalize(values []float64) (norm []float64, valid bool) {
 	avg := 0.0
@@ -58,10 +58,10 @@ func Normalize(values []float64) (norm []float64, valid bool) {
 	return
 }
 
-// This method calculates all the possible combinations of the features and
-// returns them with the specified degree, for example, for a data.X with x1, x2
-// and degree 2 will convert data.X to 1, x1, x2, x1 * x2, x1 ** 2, x2 ** 2,
-// (x1 * x2) ** 2
+// MapFeatures This method calculates all the possible combinations of the
+// features and returns them with the specified degree, for example, for a
+// data.X with x1, x2 and degree 2 will convert data.X to
+// 1, x1, x2, x1 * x2, x1 ** 2, x2 ** 2, (x1 * x2) ** 2
 // Use this method with care in order to calculate the model who fits better with
 // the problem
 func MapFeatures(x [][]float64, degree int) (ret [][]float64) {
@@ -83,8 +83,9 @@ func MapFeatures(x [][]float64, degree int) (ret [][]float64) {
 	return
 }
 
-// Retrns the x matrix with all the elements at the power of x, x-1, x-2, ... 1
-// and adds at the being of each row a 1 in order to be used as bias value
+// PrepareX Retrns the x matrix with all the elements at the power of
+// x, x-1, x-2, ... 1 and adds at the being of each row a 1 in order to be used
+// as bias value.
 // For example for a given matrix like:
 //    3 4
 //    5 8
@@ -107,7 +108,8 @@ func PrepareX(x [][]float64, degree int) (newX [][]float64) {
 	return
 }
 
-// Returns the result of multiply all the elements contained on the slice
+// multElems returns the result of multiply all the elements contained on the
+// slice
 func multElems(elems []float64) (resilt float64) {
 	resilt = 1
 	for _, elem := range elems {
@@ -117,8 +119,8 @@ func multElems(elems []float64) (resilt float64) {
 	return
 }
 
-// Returns a slice with all the possible combinations of lenght "r" of the
-// elements contained in the slice "iterable"
+// combinations Returns a slice with all the possible combinations of lenght "r"
+// of the elements contained in the slice "iterable"
 func combinations(iterable []float64, r int) (results []float64) {
 	pool := iterable
 	n := len(pool)
@@ -140,19 +142,18 @@ func combinations(iterable []float64, r int) (results []float64) {
 	results = append(results, multElems(result))
 	for {
 		i := r - 1
-		for ; i >= 0 && indices[i] == i+n-r; i -= 1 {
-		}
+		for ; i >= 0 && indices[i] == i+n-r; i-- {}
 
 		if i < 0 {
 			return
 		}
 
-		indices[i] += 1
-		for j := i + 1; j < r; j += 1 {
+		indices[i]++
+		for j := i + 1; j < r; j++ {
 			indices[j] = indices[j-1] + 1
 		}
 
-		for ; i < len(indices); i += 1 {
+		for ; i < len(indices); i++ {
 			result[i] = pool[indices[i]]
 		}
 		results = append(results, multElems(result))
@@ -163,22 +164,22 @@ func combinations(iterable []float64, r int) (results []float64) {
 
 // Auxiliar functions to work with matrix elements
 
-// Returns the negation of the given float
+// neg returns the negation of the given float
 func neg(n float64) float64 {
 	return -n
 }
 
-// Calculates the sigmoid funcion for logistic regression
+// sigmoid calculates the sigmoid funcion for logistic regression
 func sigmoid(z float64) float64 {
 	return 1 / (1 + math.Pow(math.E, neg(z)))
 }
 
-// Returns one minus the given float
+// oneMinus returns one minus the given float
 func oneMinus(x float64) float64 {
 	return 1 - x
 }
 
-// Returns the number at the power of two
+// powTwo returns the number at the power of two
 func powTwo(x float64) float64 {
 	return x * x
 }

@@ -7,7 +7,8 @@ import (
 	"strings"
 )
 
-// Anomaly detection implementation using Multivariate Gaussian Distribution:
+// MultGaussianDist Anomaly detection implementation using Multivariate Gaussian
+// Distribution:
 // http://en.wikipedia.org/wiki/Multivariate_normal_distribution#Density_function
 type MultGaussianDist struct {
 	X      [][]float64 // Data to train the gussian distribution
@@ -15,8 +16,8 @@ type MultGaussianDist struct {
 	Mu     []float64 // Medians for each feature
 }
 
-// To be called before GetProbability method in order to calculate the medians
-// and sigmas params for all the training set
+// CalculateMuSigma To be called before GetProbability method in order to
+// calculate the medians and sigmas params for all the training set
 func (gd *MultGaussianDist) CalculateMuSigma() {
 	gd.Mu = make([]float64, len(gd.X[0]))
 
@@ -40,9 +41,9 @@ func (gd *MultGaussianDist) CalculateMuSigma() {
 	}
 }
 
-// Returns the probability of anomaly for each data, each row of data is a
-// sample to study and each colum a featurea, determinate an epsilon and when
-// p(x) < epsilon, you may have an anomaly, you can use SelectThreshold in
+// GetProbability Returns the probability of anomaly for each data, each row of
+// data is a sample to study and each colum a featurea, determinate an epsilon
+// and when p(x) < epsilon, you may have an anomaly, you can use SelectThreshold
 // in order to calculate the best epsilon
 func (gd *MultGaussianDist) GetProbability(data [][]float64) (p []float64) {
 	d := make([][]float64, len(data))
@@ -69,8 +70,9 @@ func (gd *MultGaussianDist) GetProbability(data [][]float64) (p []float64) {
 	return
 }
 
-// Creates a MultGaussianDist object from the content of a CSV file space
-// sepparate where each line is a sample and each column a feature
+// MultVarGaussianDistLoadFromFile Creates a MultGaussianDist object from the
+// content of a CSV file space sepparate where each line is a sample and each
+// column a feature
 func MultVarGaussianDistLoadFromFile(filePath string) (gd *MultGaussianDist) {
 	strInfo, err := ioutil.ReadFile(filePath)
 	if err != nil {

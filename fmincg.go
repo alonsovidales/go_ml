@@ -6,8 +6,8 @@ import (
 	"math"
 )
 
-// Interface to be implemented by the machine learning algorithms to be used by
-// the Fmincg function in order to reduce the cost
+// DataSet Interface to be implemented by the machine learning algorithms to be
+// used by the Fmincg function in order to reduce the cost
 type DataSet interface {
 	// Returns the cost and gradients for the current thetas configuration
 	CostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64, err error)
@@ -21,7 +21,7 @@ type DataSet interface {
 	getTheta() [][][]float64
 }
 
-// Minimize a continuous differentialble multivariate function. Starting point
+// Fmincg Minimize a continuous differentialble multivariate function. Starting point
 // is given by the "Lambda" property (D by 1), and the method named "CostFunction", must
 // return a function value and a vector of partial derivatives. The Polack-
 // Ribiere flavour of conjugate gradients is used to compute search directions,
