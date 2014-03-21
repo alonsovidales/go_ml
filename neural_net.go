@@ -11,8 +11,8 @@ import (
 	"time"
 )
 
-// Neural network representation, the X and Y properties are to be used with
-// training proposals
+// NeuralNet Neural network representation, the X and Y properties are to be
+// used with training proposals
 type NeuralNet struct {
 	// Training set of values for each feature, the first dimension are the test cases
 	X [][]float64
@@ -37,7 +37,7 @@ func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, gra
 
 	if len(nn.Y) != len(nn.X) {
 		err = fmt.Errorf(
-			"The length of the X parameter doesn't corresponds with the length of the Y parameter")
+			"the length of the X parameter doesn't corresponds with the length of the Y parameter")
 		return
 	}
 

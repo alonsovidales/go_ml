@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-// Linear and logistic regression structure
+// Regression Linear and logistic regression structure
 type Regression struct {
 	X [][]float64 // Training set of values for each feature, the first dimension are the test cases
 	Y []float64 // The training set with values to be predicted
@@ -27,27 +27,27 @@ type Regression struct {
 // coefficients of them will be zero)
 // The calcGrad param in case of true calculates the gradient in addition of the
 // cost, and in case of false, only calculates the cost
-func (lr *Regression) CostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64, err error) {
-	if len(lr.Y) != len(lr.X) {
+func (rg *Regression) CostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64, err error) {
+	if len(rg.Y) != len(rg.X) {
 		err = fmt.Errorf(
 			"the number of test cases (X) %d doesn't corresponds with the number of values (Y) %d",
-			len(lr.X),
-			len(lr.Y))
+			len(rg.X),
+			len(rg.Y))
 		return
 	}
 
-	if len(lr.Theta) != len(lr.X[0]) {
+	if len(rg.Theta) != len(rg.X[0]) {
 		err = fmt.Errorf(
 			"the Theta arg has a lenght of %d and the input data %d",
-			len(lr.Theta),
-			len(lr.X[0]))
+			len(rg.Theta),
+			len(rg.X[0]))
 		return
 	}
 
-	if lr.LinearReg {
-		j, grad = lr.linearRegCostFunction(lambda, calcGrad)
+	if rg.LinearReg {
+		j, grad = rg.linearRegCostFunction(lambda, calcGrad)
 	} else {
-		j, grad = lr.logisticRegCostFunction(lambda, calcGrad)
+		j, grad = rg.logisticRegCostFunction(lambda, calcGrad)
 	}
 
 	return
@@ -55,9 +55,9 @@ func (lr *Regression) CostFunction(lambda float64, calcGrad bool) (j float64, gr
 
 // InitializeTheta Initialize the Theta property to an array of zeros with the
 // lenght of the number of features on the X property
-func (lr *Regression) InitializeTheta() {
+func (rg *Regression) InitializeTheta() {
 	rand.Seed(int64(time.Now().Nanosecond()))
-	lr.Theta = make([]float64, len(lr.X[0]))
+	rg.Theta = make([]float64, len(rg.X[0]))
 }
 
 // LinearHipotesis Returns the hipotesis result for Linear Regression algorithm
@@ -72,21 +72,21 @@ func (rg *Regression) LinearHipotesis(x []float64) (r float64) {
 
 // linearRegCostFunction returns the cost and gradient for the current instance
 // configuration
-func (lr *Regression) linearRegCostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64) {
+func (rg *Regression) linearRegCostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64) {
 
-	auxTheta := make([]float64, len(lr.Theta))
-	copy(auxTheta, lr.Theta)
+	auxTheta := make([]float64, len(rg.Theta))
+	copy(auxTheta, rg.Theta)
 	theta := [][]float64{auxTheta}
 
-	m := float64(len(lr.X))
-	y := [][]float64{lr.Y}
+	m := float64(len(rg.X))
+	y := [][]float64{rg.Y}
 
-	pred := mt.Trans(mt.Mult(lr.X, mt.Trans(theta)))
+	pred := mt.Trans(mt.Mult(rg.X, mt.Trans(theta)))
 	errors := mt.SumAll(mt.Apply(mt.Sub(pred, y), powTwo)) / (2 * m)
-	regTerm := (lambda / (2 * m)) * mt.SumAll(mt.Apply([][]float64{lr.Theta[1:]}, powTwo))
+	regTerm := (lambda / (2 * m)) * mt.SumAll(mt.Apply([][]float64{rg.Theta[1:]}, powTwo))
 
 	j = errors + regTerm
-	grad = [][][]float64{mt.Sum(mt.MultBy(mt.Mult(mt.Sub(pred, y), lr.X), 1 / m), mt.MultBy(theta, lambda / m))}
+	grad = [][][]float64{mt.Sum(mt.MultBy(mt.Mult(mt.Sub(pred, y), rg.X), 1 / m), mt.MultBy(theta, lambda / m))}
 
 	return
 }
@@ -143,16 +143,16 @@ func (rg *Regression) LogisticHipotesis(x []float64) (r float64) {
 
 // logisticRegCostFunction returns the cost and gradient for the current
 // instance configuration
-func (lr *Regression) logisticRegCostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64) {
+func (rg *Regression) logisticRegCostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64) {
 
-	auxTheta := make([]float64, len(lr.Theta))
-	copy(auxTheta, lr.Theta)
+	auxTheta := make([]float64, len(rg.Theta))
+	copy(auxTheta, rg.Theta)
 	theta := [][]float64{auxTheta}
 
-	m := float64(len(lr.X))
-	y := [][]float64{lr.Y}
+	m := float64(len(rg.X))
+	y := [][]float64{rg.Y}
 
-	hx := mt.Apply(mt.Mult(theta, mt.Trans(lr.X)), sigmoid)
+	hx := mt.Apply(mt.Mult(theta, mt.Trans(rg.X)), sigmoid)
 	j = (
 		mt.Mult(mt.Apply(y, neg), mt.Trans(mt.Apply(hx, math.Log)))[0][0] -
 		mt.Mult(mt.Apply(y, oneMinus), mt.Trans(mt.Apply(mt.Apply(hx, oneMinus), math.Log)))[0][0]) / m
@@ -162,7 +162,7 @@ func (lr *Regression) logisticRegCostFunction(lambda float64, calcGrad bool) (j 
 	j += lambda / (2 * m) * mt.SumAll(mt.Apply(theta, powTwo))
 
 	// Gradient calc
-	gradAux := mt.MultBy(mt.Mult(mt.Sub(hx, y), lr.X), 1 / m)
+	gradAux := mt.MultBy(mt.Mult(mt.Sub(hx, y), rg.X), 1 / m)
 	grad = [][][]float64{mt.Sum(gradAux, mt.MultBy(theta, lambda / m))}
 
 	return
@@ -247,21 +247,21 @@ func (rg *Regression) MinimizeCost(maxIters int, suffleData bool, verbose bool) 
 	return
 }
 
-func (lr *Regression) getTheta() [][][]float64 {
+func (rg *Regression) getTheta() [][][]float64 {
 	return [][][]float64{
 		[][]float64{
-			lr.Theta,
+			rg.Theta,
 		},
 	}
 }
 
 // rollThetasGrad retuns a 1xn array that will contian the theta of the instance
-func (lr *Regression) rollThetasGrad(x [][][]float64) [][]float64 {
+func (rg *Regression) rollThetasGrad(x [][][]float64) [][]float64 {
 	return x[0]
 }
 
-func (lr *Regression) setTheta(t [][][]float64) {
-	lr.Theta = t[0][0]
+func (rg *Regression) setTheta(t [][][]float64) {
+	rg.Theta = t[0][0]
 }
 
 // shuffle redistribute randomly all the X and Y rows of the instance
@@ -285,7 +285,7 @@ func (rg *Regression) shuffle() (shuffledData *Regression) {
 
 // unrollThetasGrad converts the given two dim slice to a tree dim slice in order
 // to be used with the Fmincg function
-func (lr *Regression) unrollThetasGrad(x [][]float64) [][][]float64 {
+func (rg *Regression) unrollThetasGrad(x [][]float64) [][][]float64 {
 	return [][][]float64{
 		x,
 	}
