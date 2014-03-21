@@ -1,0 +1,709 @@
+<!DOCTYPE html><html lang="en">
+<head profile="http://a9.com/-/spec/opensearch/1.1/">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="/-/site.css?v=77a375cde004447959d56a1c99a85585729361d2" rel="stylesheet">
+  
+  
+  <title>ml - GoDoc</title>
+  
+    <meta name="twitter:title" content="Package ml">
+    <meta property="og:title" content="Package ml">
+    <meta name="description" content="Package ml provides some implementations of usefull machine learning algorithms for data mining and data analysis.">
+    <meta name="twitter:description" content="Package ml provides some implementations of usefull machine learning algorithms for data mining and data analysis.">
+    <meta property="og:description" content="Package ml provides some implementations of usefull machine learning algorithms for data mining and data analysis.">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@golang">
+  
+  
+
+  
+
+</head>
+<body>
+<nav class="navbar navbar-default" role="navigation">
+  <div class="container">
+  <div class="navbar-header">
+    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+      <span class="sr-only">Toggle navigation</span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </button>
+    <a class="navbar-brand" href="/"><strong>GoDoc</strong></a>
+  </div>
+  <div class="collapse navbar-collapse">
+    <ul class="nav navbar-nav">
+        <li><a href="/">Home</a></li>
+        <li><a href="/-/index">Index</a></li>
+        <li><a href="/-/about">About</a></li>
+    </ul>
+    <form class="navbar-nav navbar-form navbar-right" id="x-search" action="/" role="search"><input class="form-control" id="x-search-query" type="text" name="q" placeholder="Search"></form>
+  </div>
+</div>
+</nav>
+
+<div class="container">
+  
+  
+
+
+
+        <div class="clearfix" id="x-projnav">
+  <a href="https://github.com/alonsovidales/go_ml"><strong>go_ml:</strong></a>
+  <span class="text-muted">github.com/alonsovidales/go_ml</span>
+  
+  <span class="pull-right">
+    <a href="#pkg-index">Index</a>
+    
+    <span class="text-muted">|</span> <a href="#pkg-files">Files</a>
+    
+  </span>
+  
+</div>
+
+        <h2 id="pkg-overview">package ml</h2>
+
+        <p><code>import "github.com/alonsovidales/go_ml"</code>
+
+        <p>
+Package ml provides some implementations of usefull machine learning
+algorithms for data mining and data analysis.
+</p>
+<p>
+The implemented algorithms are:
+</p>
+<pre>- Linear Regression
+- Logistic Regression
+- Neural Networks
+- Collaborative Filtering
+- Gaussian Multivariate Distribution for anomaly detection systems
+</pre>
+<p>
+Is implemented too the fmincg function in order to calculate the optimal
+theta configuration to reduce the cost value for all the implemented solutions.
+</p>
+<p>
+Author: Alonso Vidales &lt;alonso.vidales@tras2.es&gt;
+</p>
+<p>
+Use of this source code is governed by a BSD-style.
+These programs and documents are distributed without any warranty, express or
+implied. All use of these programs is entirely at the user&#39;s own risk.</p>
+
+
+        
+  
+
+
+        
+        <h3 id="pkg-index" class="section-header">Index <a class="permalink" href="#pkg-index">&para;</a></h3>
+
+        
+
+        <ul class="list-unstyled">
+          
+          
+          <li><a href="#Fmincg">func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx []float64, i int, err error)</a></li><li><a href="#MapFeatures">func MapFeatures(x [][]float64, degree int) (ret [][]float64)</a></li><li><a href="#Normalize">func Normalize(values []float64) (norm []float64, valid bool)</a></li><li><a href="#PrepareX">func PrepareX(x [][]float64, degree int) (newX [][]float64)</a></li>
+          
+            <li><a href="#CollaborativeFilter">type CollaborativeFilter</a></li>
+            <ul>
+            <li><a href="#NewCollFilterFromCsv">func NewCollFilterFromCsv(ratingsSrc string, availableRatings string, itemsTheta string, theta string) (result *CollaborativeFilter, err error)</a></li>
+            <li><a href="#CollaborativeFilter.AddUser">func (cf *CollaborativeFilter) AddUser(votes map[int]float64)</a></li><li><a href="#CollaborativeFilter.CalcMeans">func (cf *CollaborativeFilter) CalcMeans()</a></li><li><a href="#CollaborativeFilter.CostFunction">func (cf *CollaborativeFilter) CostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64, err error)</a></li><li><a href="#CollaborativeFilter.GetPredictionsFor">func (cf *CollaborativeFilter) GetPredictionsFor(userPos int) (preds []float64)</a></li><li><a href="#CollaborativeFilter.InitializeThetas">func (cf *CollaborativeFilter) InitializeThetas(features int)</a></li><li><a href="#CollaborativeFilter.MakePredictions">func (cf *CollaborativeFilter) MakePredictions()</a></li><li><a href="#CollaborativeFilter.Normalize">func (cf *CollaborativeFilter) Normalize() (normRatings [][]float64)</a></li>
+            </ul>
+          
+            <li><a href="#DataSet">type DataSet</a></li>
+            
+            
+            
+            
+          
+            <li><a href="#MultGaussianDist">type MultGaussianDist</a></li>
+            <ul>
+            <li><a href="#MultVarGaussianDistLoadFromFile">func MultVarGaussianDistLoadFromFile(filePath string) (gd *MultGaussianDist)</a></li>
+            <li><a href="#MultGaussianDist.CalculateMuSigma">func (gd *MultGaussianDist) CalculateMuSigma()</a></li><li><a href="#MultGaussianDist.GetProbability">func (gd *MultGaussianDist) GetProbability(data [][]float64) (p []float64)</a></li>
+            </ul>
+          
+            <li><a href="#NeuralNet">type NeuralNet</a></li>
+            <ul>
+            <li><a href="#NewNeuralNetFromCsv">func NewNeuralNetFromCsv(xSrc string, ySrc string, thetaSrc []string) (result *NeuralNet)</a></li>
+            <li><a href="#NeuralNet.CostFunction">func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64, err error)</a></li><li><a href="#NeuralNet.GetPerformance">func (nn *NeuralNet) GetPerformance(verbose bool) (cost float64, performance float64)</a></li><li><a href="#NeuralNet.Hipotesis">func (nn *NeuralNet) Hipotesis(x []float64) (result []float64)</a></li><li><a href="#NeuralNet.InitializeThetas">func (nn *NeuralNet) InitializeThetas(layerSizes []int)</a></li><li><a href="#NeuralNet.MinimizeCost">func (nn *NeuralNet) MinimizeCost(maxIters int, suffleData bool, verbose bool) (finalCost float64, performance float64, trainingData *NeuralNet, testData *NeuralNet)</a></li><li><a href="#NeuralNet.SaveThetas">func (nn *NeuralNet) SaveThetas(targetDir string) (files []string)</a></li>
+            </ul>
+          
+            <li><a href="#Regression">type Regression</a></li>
+            <ul>
+            <li><a href="#LoadFile">func LoadFile(filePath string) (data *Regression)</a></li>
+            <li><a href="#Regression.CostFunction">func (lr *Regression) CostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64, err error)</a></li><li><a href="#Regression.InitializeTheta">func (lr *Regression) InitializeTheta()</a></li><li><a href="#Regression.LinearHipotesis">func (data *Regression) LinearHipotesis(x []float64) (r float64)</a></li><li><a href="#Regression.LogisticHipotesis">func (data *Regression) LogisticHipotesis(x []float64) (r float64)</a></li><li><a href="#Regression.MinimizeCost">func (data *Regression) MinimizeCost(maxIters int, suffleData bool, verbose bool) (finalCost float64, trainingData *Regression, lambda float64, testData *Regression)</a></li>
+            </ul>
+          
+        </ul>
+
+        
+        
+          <span id="pkg-examples"></span>
+        
+
+        
+        <h4 id="pkg-files">
+          <a href="https://github.com/alonsovidales/go_ml">Package Files</a>
+          <a class="permalink" href="#pkg-files">&para;</a>
+        </h4>
+
+        <p><a href="https://github.com/alonsovidales/go_ml/blob/master/collaborative_filtering.go">collaborative_filtering.go</a> <a href="https://github.com/alonsovidales/go_ml/blob/master/fmincg.go">fmincg.go</a> <a href="https://github.com/alonsovidales/go_ml/blob/master/ml.go">ml.go</a> <a href="https://github.com/alonsovidales/go_ml/blob/master/multivariate_gaussian_normal_distribution.go">multivariate_gaussian_normal_distribution.go</a> <a href="https://github.com/alonsovidales/go_ml/blob/master/neural_net.go">neural_net.go</a> <a href="https://github.com/alonsovidales/go_ml/blob/master/regression.go">regression.go</a> </p>
+
+        
+        
+
+        
+        
+
+        
+        
+        
+          <h3 id="Fmincg">func <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/fmincg.go#L61">Fmincg</a> <a class="permalink" href="#Fmincg">&para;</a></h3>
+          <pre class="funcdecl">func Fmincg(nn <a href="#DataSet">DataSet</a>, lambda <a href="/builtin#float64">float64</a>, length <a href="/builtin#int">int</a>, verbose <a href="/builtin#bool">bool</a>) (fx []<a href="/builtin#float64">float64</a>, i <a href="/builtin#int">int</a>, err <a href="/builtin#error">error</a>)</pre><p>
+Minimize a continuous differentialble multivariate function. Starting point
+is given by the &#34;Lambda&#34; property (D by 1), and the method named &#34;CostFunction&#34;, must
+return a function value and a vector of partial derivatives. The Polack-
+Ribiere flavour of conjugate gradients is used to compute search directions,
+and a line search using quadratic and cubic polynomial approximations and the
+Wolfe-Powell stopping criteria is used together with the slope ratio method
+for guessing initial step sizes. Additionally a bunch of checks are made to
+make sure that exploration is taking place and that extrapolation will not
+be unboundedly large. The &#34;length&#34; gives the length of the run: if it is
+positive, it gives the maximum number of line searches, if negative its
+absolute gives the maximum allowed number of function evaluations.
+The function returns when either its length is up, or if no further
+progress can be made (ie, we are at a minimum, or so close that due to
+numerical problems, we cannot get any closer). If the function terminates
+within a few iterations, it could be an indication that the function value
+and derivatives are not consistent (ie, there may be a bug in the
+implementation of your &#34;f&#34; function). The function returns &#34;fx&#34; indicating the
+progress made and &#34;i&#34; the number of iterations (line searches or function evaluations,
+depending on the sign of &#34;length&#34;) used.
+</p>
+<p>
+Copyright (C) 2001 and 2002 by Carl Edward Rasmussen. Date 2002-02-13
+Ported from Octave to Go by Alonso Vidales &lt;alonso.vidales@tras2.es&gt;
+</p>
+<p>
+(C) Copyright 1999, 2000 &amp; 2001, Carl Edward Rasmussen
+</p>
+<p>
+Permission is granted for anyone to copy, use, or modify these
+programs and accompanying documents for purposes of research or
+education, provided this copyright notice is retained, and note is
+made of any changes that have been made.
+</p>
+<p>
+These programs and documents are distributed without any warranty,
+express or implied.  As the programs were written for research
+purposes only, they have not been tested to the degree that would be
+advisable in any important application.  All use of these programs is
+entirely at the user&#39;s own risk.
+</p>
+
+          
+  
+
+        
+          <h3 id="MapFeatures">func <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/ml.go#L67">MapFeatures</a> <a class="permalink" href="#MapFeatures">&para;</a></h3>
+          <pre class="funcdecl">func MapFeatures(x [][]<a href="/builtin#float64">float64</a>, degree <a href="/builtin#int">int</a>) (ret [][]<a href="/builtin#float64">float64</a>)</pre><p>
+This method calculates all the possible combinations of the features and
+returns them with the specified degree, for example, for a data.X with x1, x2
+and degree 2 will convert data.X to 1, x1, x2, x1 * x2, x1 ** 2, x2 ** 2,
+(x1 * x2) ** 2
+Use this method with care in order to calculate the model who fits better with
+the problem
+</p>
+
+          
+  
+
+        
+          <h3 id="Normalize">func <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/ml.go#L32">Normalize</a> <a class="permalink" href="#Normalize">&para;</a></h3>
+          <pre class="funcdecl">func Normalize(values []<a href="/builtin#float64">float64</a>) (norm []<a href="/builtin#float64">float64</a>, valid <a href="/builtin#bool">bool</a>)</pre><p>
+Returns all the values of the given matrix normalized, the formula applied to
+all the elements is: (Xn - Avg) / (max - min) If all the elements in the
+slice have the same values, or the slice is empty, the slice can&#39;t be
+normalized, then returns false in the valid parameter
+</p>
+
+          
+  
+
+        
+          <h3 id="PrepareX">func <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/ml.go#L94">PrepareX</a> <a class="permalink" href="#PrepareX">&para;</a></h3>
+          <pre class="funcdecl">func PrepareX(x [][]<a href="/builtin#float64">float64</a>, degree <a href="/builtin#int">int</a>) (newX [][]<a href="/builtin#float64">float64</a>)</pre><p>
+Retrns the x matrix with all the elements at the power of x, x-1, x-2, ... 1
+and adds at the being of each row a 1 in order to be used as bias value
+For example for a given matrix like:
+</p>
+<pre>3 4
+5 8
+</pre>
+<p>
+Prepared at the power of 2 (x = 2):
+</p>
+<pre>1 3  9 4 16
+1 5 25 8 64
+</pre>
+
+          
+  
+
+        
+
+        
+        
+
+        
+          <h3 id="CollaborativeFilter">type <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/collaborative_filtering.go#L15">CollaborativeFilter</a> <a class="permalink" href="#CollaborativeFilter">&para;</a></h3>
+          <pre>type CollaborativeFilter struct {
+    <span class="com">// User ratios by item (rows), and user (cols)</span>
+    <span id="CollaborativeFilter.Ratings">Ratings</span> [][]<a href="/builtin#float64">float64</a>
+    <span class="com">// Matrix for classified or not items by user, use 0.0 for unclissified, 1.0 for classified</span>
+    <span id="CollaborativeFilter.AvailableRatings">AvailableRatings</span> [][]<a href="/builtin#float64">float64</a>
+    <span class="com">// Martrix with items and features</span>
+    <span id="CollaborativeFilter.ItemsTheta">ItemsTheta</span> [][]<a href="/builtin#float64">float64</a>
+    <span id="CollaborativeFilter.Theta">Theta</span>      [][]<a href="/builtin#float64">float64</a>
+    <span class="com">// Used for mean normalization, will store the mean ratings for all the items</span>
+    <span id="CollaborativeFilter.Means">Means</span>       []<a href="/builtin#float64">float64</a>
+    <span id="CollaborativeFilter.Features">Features</span>    <a href="/builtin#int">int</a>
+    <span id="CollaborativeFilter.Predictions">Predictions</span> [][]<a href="/builtin#float64">float64</a>
+}</pre><p>
+Collaborative filtering implementation, this algorithm is able to determine
+the items with a best fit for items not yet rated in a matrix of users and
+items calcifications: <a href="http://en.wikipedia.org/wiki/Collaborative_filtering">http://en.wikipedia.org/wiki/Collaborative_filtering</a>
+</p>
+
+          
+          
+          
+  
+
+
+          
+            <h4 id="NewCollFilterFromCsv">func <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/collaborative_filtering.go#L208">NewCollFilterFromCsv</a> <a class="permalink" href="#NewCollFilterFromCsv">&para;</a></h4>
+            <pre class="funcdecl">func NewCollFilterFromCsv(ratingsSrc <a href="/builtin#string">string</a>, availableRatings <a href="/builtin#string">string</a>, itemsTheta <a href="/builtin#string">string</a>, theta <a href="/builtin#string">string</a>) (result *<a href="#CollaborativeFilter">CollaborativeFilter</a>, err <a href="/builtin#error">error</a>)</pre><p>
+Loads the information from the CSV space separated files for the collaborative filter
+</p>
+
+            
+  
+
+          
+
+          
+            <h4 id="CollaborativeFilter.AddUser">func (*CollaborativeFilter) <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/collaborative_filtering.go#L46">AddUser</a> <a class="permalink" href="#CollaborativeFilter.AddUser">&para;</a></h4>
+            <pre class="funcdecl">func (cf *<a href="#CollaborativeFilter">CollaborativeFilter</a>) AddUser(votes map[<a href="/builtin#int">int</a>]<a href="/builtin#float64">float64</a>)</pre><p>
+Adds a single user ratings to the user ratings matrix and prepares the theta
+parameters, to calculate the recommendations for this user
+</p>
+
+            
+  
+
+          
+            <h4 id="CollaborativeFilter.CalcMeans">func (*CollaborativeFilter) <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/collaborative_filtering.go#L69">CalcMeans</a> <a class="permalink" href="#CollaborativeFilter.CalcMeans">&para;</a></h4>
+            <pre class="funcdecl">func (cf *<a href="#CollaborativeFilter">CollaborativeFilter</a>) CalcMeans()</pre><p>
+Calculate the means for all the items and store them
+</p>
+
+            
+  
+
+          
+            <h4 id="CollaborativeFilter.CostFunction">func (*CollaborativeFilter) <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/collaborative_filtering.go#L105">CostFunction</a> <a class="permalink" href="#CollaborativeFilter.CostFunction">&para;</a></h4>
+            <pre class="funcdecl">func (cf *<a href="#CollaborativeFilter">CollaborativeFilter</a>) CostFunction(lambda <a href="/builtin#float64">float64</a>, calcGrad <a href="/builtin#bool">bool</a>) (j <a href="/builtin#float64">float64</a>, grad [][][]<a href="/builtin#float64">float64</a>, err <a href="/builtin#error">error</a>)</pre><p>
+Cost function for the collaborative filter
+</p>
+
+            
+  
+
+          
+            <h4 id="CollaborativeFilter.GetPredictionsFor">func (*CollaborativeFilter) <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/collaborative_filtering.go#L30">GetPredictionsFor</a> <a class="permalink" href="#CollaborativeFilter.GetPredictionsFor">&para;</a></h4>
+            <pre class="funcdecl">func (cf *<a href="#CollaborativeFilter">CollaborativeFilter</a>) GetPredictionsFor(userPos <a href="/builtin#int">int</a>) (preds []<a href="/builtin#float64">float64</a>)</pre><p>
+Returns the predictions for a single user in the given position
+</p>
+
+            
+  
+
+          
+            <h4 id="CollaborativeFilter.InitializeThetas">func (*CollaborativeFilter) <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/collaborative_filtering.go#L178">InitializeThetas</a> <a class="permalink" href="#CollaborativeFilter.InitializeThetas">&para;</a></h4>
+            <pre class="funcdecl">func (cf *<a href="#CollaborativeFilter">CollaborativeFilter</a>) InitializeThetas(features <a href="/builtin#int">int</a>)</pre><p>
+Random initialization of the thetas for the given features
+</p>
+
+            
+  
+
+          
+            <h4 id="CollaborativeFilter.MakePredictions">func (*CollaborativeFilter) <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/collaborative_filtering.go#L40">MakePredictions</a> <a class="permalink" href="#CollaborativeFilter.MakePredictions">&para;</a></h4>
+            <pre class="funcdecl">func (cf *<a href="#CollaborativeFilter">CollaborativeFilter</a>) MakePredictions()</pre><p>
+Prepare the predictions for all the users
+</p>
+
+            
+  
+
+          
+            <h4 id="CollaborativeFilter.Normalize">func (*CollaborativeFilter) <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/collaborative_filtering.go#L86">Normalize</a> <a class="permalink" href="#CollaborativeFilter.Normalize">&para;</a></h4>
+            <pre class="funcdecl">func (cf *<a href="#CollaborativeFilter">CollaborativeFilter</a>) Normalize() (normRatings [][]<a href="/builtin#float64">float64</a>)</pre><p>
+Normalize the rating of the users, this method doesn&#39;t update the ratings
+in the objects, just returns them
+</p>
+
+            
+  
+
+          
+        
+          <h3 id="DataSet">type <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/fmincg.go#L11">DataSet</a> <a class="permalink" href="#DataSet">&para;</a></h3>
+          <pre>type DataSet interface {
+    <span class="com">// Returns the cost and gradients for the current thetas configuration</span>
+    <span id="DataSet.CostFunction">CostFunction</span>(lambda <a href="/builtin#float64">float64</a>, calcGrad <a href="/builtin#bool">bool</a>) (j <a href="/builtin#float64">float64</a>, grad [][][]<a href="/builtin#float64">float64</a>, err <a href="/builtin#error">error</a>)
+    <span class="com">// contains filtered or unexported methods</span>
+}</pre><p>
+Interface to be implemented by the machine learning algorithms to be used by
+the Fmincg function in order to reduce the cost
+</p>
+
+          
+          
+          
+  
+
+
+          
+
+          
+        
+          <h3 id="MultGaussianDist">type <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/multivariate_gaussian_normal_distribution.go#L12">MultGaussianDist</a> <a class="permalink" href="#MultGaussianDist">&para;</a></h3>
+          <pre>type MultGaussianDist struct {
+    <span id="MultGaussianDist.X">X</span>      [][]<a href="/builtin#float64">float64</a> <span class="com">// Data to train the gussian distribution</span>
+    <span id="MultGaussianDist.Sigma2">Sigma2</span> []<a href="/builtin#float64">float64</a>
+    <span id="MultGaussianDist.Mu">Mu</span>     []<a href="/builtin#float64">float64</a> <span class="com">// Medians for each feature</span>
+}</pre><p>
+Anomaly detection implementation using Multivariate Gaussian Distribution:
+<a href="http://en.wikipedia.org/wiki/Multivariate_normal_distribution#Density_function">http://en.wikipedia.org/wiki/Multivariate_normal_distribution#Density_function</a>
+</p>
+
+          
+          
+          
+  
+
+
+          
+            <h4 id="MultVarGaussianDistLoadFromFile">func <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/multivariate_gaussian_normal_distribution.go#L74">MultVarGaussianDistLoadFromFile</a> <a class="permalink" href="#MultVarGaussianDistLoadFromFile">&para;</a></h4>
+            <pre class="funcdecl">func MultVarGaussianDistLoadFromFile(filePath <a href="/builtin#string">string</a>) (gd *<a href="#MultGaussianDist">MultGaussianDist</a>)</pre><p>
+Creates a MultGaussianDist object from the content of a CSV file space
+sepparate where each line is a sample and each column a feature
+</p>
+
+            
+  
+
+          
+
+          
+            <h4 id="MultGaussianDist.CalculateMuSigma">func (*MultGaussianDist) <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/multivariate_gaussian_normal_distribution.go#L20">CalculateMuSigma</a> <a class="permalink" href="#MultGaussianDist.CalculateMuSigma">&para;</a></h4>
+            <pre class="funcdecl">func (gd *<a href="#MultGaussianDist">MultGaussianDist</a>) CalculateMuSigma()</pre><p>
+To be called before GetProbability method in order to calculate the medians
+and sigmas params for all the training set
+</p>
+
+            
+  
+
+          
+            <h4 id="MultGaussianDist.GetProbability">func (*MultGaussianDist) <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/multivariate_gaussian_normal_distribution.go#L47">GetProbability</a> <a class="permalink" href="#MultGaussianDist.GetProbability">&para;</a></h4>
+            <pre class="funcdecl">func (gd *<a href="#MultGaussianDist">MultGaussianDist</a>) GetProbability(data [][]<a href="/builtin#float64">float64</a>) (p []<a href="/builtin#float64">float64</a>)</pre><p>
+Returns the probability of anomaly for each data, each row of data is a
+sample to study and each colum a featurea, determinate an epsilon and when
+p(x) &lt; epsilon, you may have an anomaly, you can use SelectThreshold in
+in order to calculate the best epsilon
+</p>
+
+            
+  
+
+          
+        
+          <h3 id="NeuralNet">type <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/neural_net.go#L16">NeuralNet</a> <a class="permalink" href="#NeuralNet">&para;</a></h3>
+          <pre>type NeuralNet struct {
+    <span class="com">// Training set of values for each feature, the first dimension are the test cases</span>
+    <span id="NeuralNet.X">X</span>   [][]<a href="/builtin#float64">float64</a>
+    <span class="com">// The training set with values to be predicted</span>
+    <span id="NeuralNet.Y">Y</span>   [][]<a href="/builtin#float64">float64</a>
+    <span class="com">// 1st dim -&gt; layer, 2nd dim -&gt; neuron, 3rd dim theta</span>
+    <span id="NeuralNet.Theta">Theta</span> [][][]<a href="/builtin#float64">float64</a>
+}</pre><p>
+Neural network representation, the X and Y properties are to be used with
+training proposals
+</p>
+
+          
+          
+          
+  
+
+
+          
+            <h4 id="NewNeuralNetFromCsv">func <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/neural_net.go#L284">NewNeuralNetFromCsv</a> <a class="permalink" href="#NewNeuralNetFromCsv">&para;</a></h4>
+            <pre class="funcdecl">func NewNeuralNetFromCsv(xSrc <a href="/builtin#string">string</a>, ySrc <a href="/builtin#string">string</a>, thetaSrc []<a href="/builtin#string">string</a>) (result *<a href="#NeuralNet">NeuralNet</a>)</pre><p>
+Loads the informaton contained in the specified file paths and returns a
+NeuralNet instance.
+Each input file should contain a row by sample, and the values separated by a
+single space.
+To load the thetas specify on thetaSrc the file paths that contains each of
+the layer values. The order of this paths will represent the order of the
+layers.
+In case of need only to load the theta paramateres, specify a empty string on
+the xSrc and ySrc parameters.
+</p>
+
+            
+  
+
+          
+
+          
+            <h4 id="NeuralNet.CostFunction">func (*NeuralNet) <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/neural_net.go#L32">CostFunction</a> <a class="permalink" href="#NeuralNet.CostFunction">&para;</a></h4>
+            <pre class="funcdecl">func (nn *<a href="#NeuralNet">NeuralNet</a>) CostFunction(lambda <a href="/builtin#float64">float64</a>, calcGrad <a href="/builtin#bool">bool</a>) (j <a href="/builtin#float64">float64</a>, grad [][][]<a href="/builtin#float64">float64</a>, err <a href="/builtin#error">error</a>)</pre><p>
+Calcualtes the cost function for the training set stored in the X and Y
+properties of the instance, and with the theta configuration.
+The lambda parameter controls the degree of regularization (0 means
+no-regularization, infinity means ignoring all input variables because all
+coefficients of them will be zero)
+The calcGrad param in case of true calculates the gradient in addition of the
+cost, and in case of false, only calculates the cost
+</p>
+
+            
+  
+
+          
+            <h4 id="NeuralNet.GetPerformance">func (*NeuralNet) <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/neural_net.go#L125">GetPerformance</a> <a class="permalink" href="#NeuralNet.GetPerformance">&para;</a></h4>
+            <pre class="funcdecl">func (nn *<a href="#NeuralNet">NeuralNet</a>) GetPerformance(verbose <a href="/builtin#bool">bool</a>) (cost <a href="/builtin#float64">float64</a>, performance <a href="/builtin#float64">float64</a>)</pre><p>
+Returns the performance of the neural network with the current set of samples.
+The performance is calculated as: matches / total_samples
+</p>
+
+            
+  
+
+          
+            <h4 id="NeuralNet.Hipotesis">func (*NeuralNet) <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/neural_net.go#L160">Hipotesis</a> <a class="permalink" href="#NeuralNet.Hipotesis">&para;</a></h4>
+            <pre class="funcdecl">func (nn *<a href="#NeuralNet">NeuralNet</a>) Hipotesis(x []<a href="/builtin#float64">float64</a>) (result []<a href="/builtin#float64">float64</a>)</pre><p>
+Returns the hipotesis calculation for the sample &#34;x&#34; using the thetas of
+nn.Theta
+</p>
+
+            
+  
+
+          
+            <h4 id="NeuralNet.InitializeThetas">func (*NeuralNet) <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/neural_net.go#L174">InitializeThetas</a> <a class="permalink" href="#NeuralNet.InitializeThetas">&para;</a></h4>
+            <pre class="funcdecl">func (nn *<a href="#NeuralNet">NeuralNet</a>) InitializeThetas(layerSizes []<a href="/builtin#int">int</a>)</pre><p>
+Random inizialization of the thetas to break the simetry.
+The slice &#34;layerSizes&#34; will contain on each element, the size of the layer to
+be initialized, the first layer is the input one, and last layer will
+correspond to the output layer
+</p>
+
+            
+  
+
+          
+            <h4 id="NeuralNet.MinimizeCost">func (*NeuralNet) <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/neural_net.go#L206">MinimizeCost</a> <a class="permalink" href="#NeuralNet.MinimizeCost">&para;</a></h4>
+            <pre class="funcdecl">func (nn *<a href="#NeuralNet">NeuralNet</a>) MinimizeCost(maxIters <a href="/builtin#int">int</a>, suffleData <a href="/builtin#bool">bool</a>, verbose <a href="/builtin#bool">bool</a>) (finalCost <a href="/builtin#float64">float64</a>, performance <a href="/builtin#float64">float64</a>, trainingData *<a href="#NeuralNet">NeuralNet</a>, testData *<a href="#NeuralNet">NeuralNet</a>)</pre><p>
+This metod splits the samples contained in the NeuralNet instance in three
+sets (60%, 20%, 20%): training, cross validation and test. In order to
+calculate the optimal theta, after try with different lambda values on the
+training set and compare the performance obtained with the cross validation
+set to get the lambda with a better performance in the cross validation set.
+After calculate the best lambda, merges the training and cross validation
+sets and trains the neural network with the 80% of the samples.
+The data can be shuffled in order to obtain a better distribution before
+divide it in groups
+</p>
+
+            
+  
+
+          
+            <h4 id="NeuralNet.SaveThetas">func (*NeuralNet) <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/neural_net.go#L371">SaveThetas</a> <a class="permalink" href="#NeuralNet.SaveThetas">&para;</a></h4>
+            <pre class="funcdecl">func (nn *<a href="#NeuralNet">NeuralNet</a>) SaveThetas(targetDir <a href="/builtin#string">string</a>) (files []<a href="/builtin#string">string</a>)</pre><p>
+Store all the current theta values of the instance in the &#34;targetDir&#34; directory.
+This method will create a file for each layer of theta called theta_X.txt
+where X is the layer contained on the file.
+</p>
+
+            
+  
+
+          
+        
+          <h3 id="Regression">type <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/regression.go#L15">Regression</a> <a class="permalink" href="#Regression">&para;</a></h3>
+          <pre>type Regression struct {
+    <span id="Regression.X">X</span>   [][]<a href="/builtin#float64">float64</a> <span class="com">// Training set of values for each feature, the first dimension are the test cases</span>
+    <span id="Regression.Y">Y</span>   []<a href="/builtin#float64">float64</a>   <span class="com">// The training set with values to be predicted</span>
+    <span class="com">// 1st dim -&gt; layer, 2nd dim -&gt; neuron, 3rd dim theta</span>
+    <span id="Regression.Theta">Theta</span>     []<a href="/builtin#float64">float64</a>
+    <span id="Regression.LinearReg">LinearReg</span> <a href="/builtin#bool">bool</a> <span class="com">// true indicates that this is a linear regression problem, false a logistic regression one</span>
+}</pre><p>
+Linear and logistic regression structure
+</p>
+
+          
+          
+          
+  
+
+
+          
+            <h4 id="LoadFile">func <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/regression.go#L100">LoadFile</a> <a class="permalink" href="#LoadFile">&para;</a></h4>
+            <pre class="funcdecl">func LoadFile(filePath <a href="/builtin#string">string</a>) (data *<a href="#Regression">Regression</a>)</pre><p>
+Loads information from the local file located at filePath, and after parse
+it, returns the Regression ready to be used with all the information loaded
+The file format is:
+</p>
+<pre>X11 X12 ... X1N Y1
+X21 X22 ... X2N Y2
+... ... ... ... ..
+XN1 XN2 ... XNN YN
+</pre>
+<p>
+Note: Use a single space as separator
+</p>
+
+            
+  
+
+          
+
+          
+            <h4 id="Regression.CostFunction">func (*Regression) <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/regression.go#L30">CostFunction</a> <a class="permalink" href="#Regression.CostFunction">&para;</a></h4>
+            <pre class="funcdecl">func (lr *<a href="#Regression">Regression</a>) CostFunction(lambda <a href="/builtin#float64">float64</a>, calcGrad <a href="/builtin#bool">bool</a>) (j <a href="/builtin#float64">float64</a>, grad [][][]<a href="/builtin#float64">float64</a>, err <a href="/builtin#error">error</a>)</pre><p>
+Calcualtes the cost function for the training set stored in the X and Y
+properties of the instance, and with the theta configuration.
+The lambda parameter controls the degree of regularization (0 means
+no-regularization, infinity means ignoring all input variables because all
+coefficients of them will be zero)
+The calcGrad param in case of true calculates the gradient in addition of the
+cost, and in case of false, only calculates the cost
+</p>
+
+            
+  
+
+          
+            <h4 id="Regression.InitializeTheta">func (*Regression) <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/regression.go#L58">InitializeTheta</a> <a class="permalink" href="#Regression.InitializeTheta">&para;</a></h4>
+            <pre class="funcdecl">func (lr *<a href="#Regression">Regression</a>) InitializeTheta()</pre><p>
+Initialize the Theta property to an array of zeros with the lenght of the
+number of features on the X property
+</p>
+
+            
+  
+
+          
+            <h4 id="Regression.LinearHipotesis">func (*Regression) <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/regression.go#L63">LinearHipotesis</a> <a class="permalink" href="#Regression.LinearHipotesis">&para;</a></h4>
+            <pre class="funcdecl">func (data *<a href="#Regression">Regression</a>) LinearHipotesis(x []<a href="/builtin#float64">float64</a>) (r <a href="/builtin#float64">float64</a>)</pre>
+            
+  
+
+          
+            <h4 id="Regression.LogisticHipotesis">func (*Regression) <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/regression.go#L130">LogisticHipotesis</a> <a class="permalink" href="#Regression.LogisticHipotesis">&para;</a></h4>
+            <pre class="funcdecl">func (data *<a href="#Regression">Regression</a>) LogisticHipotesis(x []<a href="/builtin#float64">float64</a>) (r <a href="/builtin#float64">float64</a>)</pre><p>
+Returns the hipotesis result for the thetas in the instance and the specified
+parameters
+</p>
+
+            
+  
+
+          
+            <h4 id="Regression.MinimizeCost">func (*Regression) <a title="View Source" href="https://github.com/alonsovidales/go_ml/blob/master/regression.go#L169">MinimizeCost</a> <a class="permalink" href="#Regression.MinimizeCost">&para;</a></h4>
+            <pre class="funcdecl">func (data *<a href="#Regression">Regression</a>) MinimizeCost(maxIters <a href="/builtin#int">int</a>, suffleData <a href="/builtin#bool">bool</a>, verbose <a href="/builtin#bool">bool</a>) (finalCost <a href="/builtin#float64">float64</a>, trainingData *<a href="#Regression">Regression</a>, lambda <a href="/builtin#float64">float64</a>, testData *<a href="#Regression">Regression</a>)</pre><p>
+This metod splits the given data in three sets: training, cross validation,
+test. In order to calculate the optimal theta, tries with different
+possibilities and the training data, and check the best match with the cross
+validations, after obtain the best lambda, check the perfomand against the
+test set of data
+</p>
+
+            
+  
+
+          
+        
+
+        
+        
+        
+
+<div id="x-pkginfo">
+
+  <form name="x-refresh" method="POST" action="/-/refresh"><input type="hidden" name="path" value="github.com/alonsovidales/go_ml"></form>
+  <p>Package ml imports <a href="?imports">8 packages</a> (<a href="?import-graph">graph</a>).
+  Updated <span class="timeago" title="2014-03-14T05:09:54Z">2014-03-14</span>.
+  <a href="javascript:document.getElementsByName('x-refresh')[0].submit();" title="Refresh this page from the source.">Refresh now</a>.
+  <a href="?tools">Tools</a> for package owners.
+
+
+</div>
+
+
+
+
+  
+
+</div>
+<div id="x-footer" class="clearfix">
+  <div class="container">
+    <a href="https://github.com/golang/gddo/issues">Website Issues</a>
+    <span class="text-muted">|</span> <a href="http://golang.org/">Go Language</a>
+    <span class="pull-right"><a href="#">Back to top</a></span>
+  </div>
+</div>
+
+<div id="x-shortcuts" tabindex="-1" class="modal fade">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h4 class="modal-title">Keyboard shortcuts</h4>
+        </div>
+        <div class="modal-body">
+          <table>
+          <tr><td align="right"><b>?</b></td><td> : This menu</td></tr>
+          <tr><td align="right"><b>/</b></td><td> : Search site</td></tr>
+          <tr><td align="right"><b>g</b> then <b>g</b></td><td> : Go to top of page</td></tr>
+          <tr><td align="right"><b>g</b> then <b>b</b></td><td> : Go to end of page</td></tr>
+          <tr><td align="right"><b>g</b> then <b>i</b></td><td> : Go to index</td></tr>
+          <tr><td align="right"><b>g</b> then <b>e</b></td><td> : Go to examples</td></tr>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script><script src="/-/site.js?v=fee4524d1fe25f85f48781007ab8f34f2de49aa5"></script><script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-11222381-8']);
+  _gaq.push(['_trackPageview']);
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+</body>
+</html>
