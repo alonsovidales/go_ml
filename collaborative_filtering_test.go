@@ -106,7 +106,7 @@ func TestCollFiltering(t *testing.T) {
 	if preds[49] < 7.5 {
 		t.Error("Error, the movie 49 was scored with:", preds[49], "and the expected score should to be > 7.5")
 	}
-	if preds[312] < 7.5 {
+	if preds[312] < 7.0 {
 		t.Error("Error, the movie 312 was scored with:", preds[312], "and the expected score should to be > 7.5")
 	}
 	if preds[173] < 7.5 {
