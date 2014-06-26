@@ -10,15 +10,15 @@ import (
 // used by the Fmincg function in order to reduce the cost
 type DataSet interface {
 	// Returns the cost and gradients for the current thetas configuration
-	CostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64, err error)
+	CostFunction(lambda float32, calcGrad bool) (j float32, grad [][][]float32, err error)
 	// Returns the thetas in a 1xn matrix
-	rollThetasGrad(x [][][]float64) [][]float64
+	rollThetasGrad(x [][][]float32) [][]float32
 	// Returns the thetas rolled by the rollThetasGrad method as it original form
-	unrollThetasGrad(x [][]float64) [][][]float64
+	unrollThetasGrad(x [][]float32) [][][]float32
 	// Sets the Theta param after convert it to the corresponding internal data structure
-	setTheta(t [][][]float64)
+	setTheta(t [][][]float32)
 	// Returns the theta as a 3 dimensional slice
-	getTheta() [][][]float64
+	getTheta() [][][]float32
 }
 
 // Fmincg Minimize a continuous differentialble multivariate function. Starting point
@@ -58,7 +58,7 @@ type DataSet interface {
 // advisable in any important application.  All use of these programs is
 // entirely at the user's own risk.
 //
-func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx []float64, i int, err error) {
+func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx []float32, i int, err error) {
 	rho := 0.01    // a bunch of constants for line searches
 	sig := 0.5     // RHO and SIG are the constants in the Wolfe-Powell conditions
 	int := 0.1     // don't reevaluate within 0.1 of the limit of the current bracket
@@ -66,12 +66,13 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx []float64,
 	max := 20      // max 20 function evaluations per line search
 	ratio := 100.0 // maximum allowed slope ratio
 	red := 1.0
-	fx = []float64{}
+	fx = []float32{}
 
 	i = 0             // zero the run length counter
 	lsFailed := false // no previous line search has failed
 
-	f1, df1Tmp, err := nn.CostFunction(lambda, true) // get function value and gradient
+	f1tmp, df1Tmp, err := nn.CostFunction(float32(lambda), true) // get function value and gradient
+	f1 := float64(f1tmp)
 	if err != nil {
 		return
 	}
@@ -81,8 +82,8 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx []float64,
 	minCost := f1
 
 	s := mt.Apply(df1, neg)                            // search direction is steepest
-	d1 := mt.MultTrans(mt.Apply(s, neg), s)[0][0] // this is the slope
-	z1 := red / (float64(1) - d1)                      // initial step is red/(|s|+1)
+	d1 := float64(mt.MultTrans(mt.Apply(s, neg), s)[0][0]) // this is the slope
+	z1 := red / (1 - d1)                      // initial step is red/(|s|+1)
 
 	mainLoop: for i := 0; i < length; i++ {
 		var z2 float64
@@ -90,12 +91,13 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx []float64,
 		x0 := nn.rollThetasGrad(nn.getTheta()) // make a copy of current values
 		f0 := f1
 		df0 := mt.Copy(df1)
-		x := mt.Sum(x0, mt.MultBy(s, z1)) // begin line search
+		x := mt.Sum(x0, mt.MultBy(s, float32(z1))) // begin line search
 
 		nn.setTheta(nn.unrollThetasGrad(x))
-		f2, df2Temp, _ := nn.CostFunction(lambda, true)
+		f2tmp, df2Temp, _ := nn.CostFunction(float32(lambda), true)
+		f2 := float64(f2tmp)
 		df2 := nn.rollThetasGrad(df2Temp)
-		d2 := mt.MultTrans(df2, s)[0][0]
+		d2 := float64(mt.MultTrans(df2, s)[0][0])
 
 		if f2 < minCost {
 			bestTheta = nn.getTheta()
@@ -127,9 +129,10 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx []float64,
 
 				z2 = math.Max(math.Min(z2, int*z3), (1-int)*z3) // don't accept too close to limits
 				z1 += z2                                        // update the step
-				x = mt.Sum(x, mt.MultBy(s, z2))
+				x = mt.Sum(x, mt.MultBy(s, float32(z2)))
 				nn.setTheta(nn.unrollThetasGrad(x))
-				f2, df2Temp, _ = nn.CostFunction(lambda, true)
+				f2tmp, df2Temp, _ = nn.CostFunction(float32(lambda), true)
+				f2 := float64(f2tmp)
 				df2 = nn.rollThetasGrad(df2Temp)
 				if f2 < minCost {
 					bestTheta = nn.getTheta()
@@ -137,12 +140,12 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx []float64,
 				}
 
 				m--
-				d2 = mt.MultTrans(df2, s)[0][0]
+				d2 = float64(mt.MultTrans(df2, s)[0][0])
 				z3 -= z2
 			}
 
 			switch true {
-			case f2 > f1+z1*rho*d1 || d2 > neg(sig)*d1: // this is a failure
+			case f2 > f1+z1*rho*d1 || d2 > (sig * -1)*d1: // this is a failure
 				break searchLoop
 			case d2 > sig*d1:
 				success = true
@@ -179,9 +182,10 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx []float64,
 			d3 = d2
 			z3 = -z2
 			z1 += z2
-			x = mt.Sum(x, mt.MultBy(s, z2))
+			x = mt.Sum(x, mt.MultBy(s, float32(z2)))
 			nn.setTheta(nn.unrollThetasGrad(x))
-			f2, df2Temp, _ = nn.CostFunction(lambda, true)
+			f2tmp, df2Temp, _ = nn.CostFunction(float32(lambda), true)
+			f2 = float64(f2tmp)
 			if f2 < minCost {
 				bestTheta = nn.getTheta()
 				minCost = f2
@@ -189,28 +193,28 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx []float64,
 			df2 = nn.rollThetasGrad(df2Temp)
 
 			m--
-			d2 = mt.MultTrans(df2, s)[0][0]
+			d2 = float64(mt.MultTrans(df2, s)[0][0])
 		}
 
 		if success {
 			f1 = f2
-			fx = append(fx, f1)
+			fx = append(fx, float32(f1))
 			if verbose {
 				fmt.Printf("Iteration: %d | Cost: %f\n", i+1, f1)
 			}
 
 			// Polack-Ribiere direction
-			s = mt.Sub(mt.MultBy(s, (mt.MultTrans(df2, df2)[0][0]-mt.MultTrans(df1, df2)[0][0])/mt.MultTrans(df1, df1)[0][0]), df2)
+			s = mt.Sub(mt.MultBy(s, (float32(mt.MultTrans(df2, df2)[0][0])-float32(mt.MultTrans(df1, df2)[0][0]))/float32(mt.MultTrans(df1, df1)[0][0])), df2)
 
 			// swap derivatives
 			tmp := df1
 			df1 = df2
 			df2 = tmp
 
-			d2 = mt.MultTrans(df1, s)[0][0]
+			d2 = float64(mt.MultTrans(df1, s)[0][0])
 			if d2 > 0 {
 				s = mt.Apply(df1, neg)
-				d2 = mt.MultTrans(mt.Apply(s, neg), s)[0][0]
+				d2 = float64(mt.MultTrans(mt.Apply(s, neg), s)[0][0])
 			}
 			z1 = z1 * math.Min(ratio, d1/d2)
 			d1 = d2
@@ -227,7 +231,7 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx []float64,
 			df1 = df2
 			df2 = tmp
 			s = mt.Apply(df1, neg) // try steepest
-			d1 = mt.MultTrans(mt.Apply(s, neg), s)[0][0]
+			d1 = float64(mt.MultTrans(mt.Apply(s, neg), s)[0][0])
 			z1 = red / (float64(1) - d1)
 			lsFailed = true
 		}
