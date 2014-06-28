@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+/*
 func TestRollUnroll(t *testing.T) {
 	fmt.Println("Testing Roll & Unroll neural networks...")
 	nn := NewNeuralNetFromCsv(
@@ -39,7 +40,7 @@ func TestRollUnroll(t *testing.T) {
 		}
 	}
 
-}
+}*/
 
 // Using a predefined dataset stored in test_data/test_linear.dat, calculates
 // the cost and gradient for different lambda y theta
@@ -70,6 +71,7 @@ func TestNeuralNet(t *testing.T) {
 	}
 }
 
+/*
 func TestNeuralNetMinimizeCost(t *testing.T) {
 	fmt.Println("Testing Neural Network training...")
 
@@ -116,3 +118,4 @@ func TestNeuralNetSaveLoad(t *testing.T) {
 		t.Error("The cost returned after store and read the Thetas from files, doesn't match with the initial theta")
 	}
 }
+*/

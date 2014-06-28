@@ -19,6 +19,9 @@ type DataSet interface {
 	setTheta(t [][][]float32)
 	// Returns the theta as a 3 dimensional slice
 	getTheta() [][][]float32
+
+	// Prepares all the internal values to calculate the gradient in the fastest way possible
+	InitFmincg()
 }
 
 // Fmincg Minimize a continuous differentialble multivariate function. Starting point
@@ -67,6 +70,7 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx []float32,
 	ratio := 100.0 // maximum allowed slope ratio
 	red := 1.0
 	fx = []float32{}
+	nn.InitFmincg()
 
 	i = 0             // zero the run length counter
 	lsFailed := false // no previous line search has failed
