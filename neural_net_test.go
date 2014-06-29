@@ -5,7 +5,6 @@ import (
 	"fmt"
 )
 
-/*
 func TestRollUnroll(t *testing.T) {
 	fmt.Println("Testing Roll & Unroll neural networks...")
 	nn := NewNeuralNetFromCsv(
@@ -16,12 +15,12 @@ func TestRollUnroll(t *testing.T) {
 
 	nn.InitializeThetas([]int{400, 50, 10})
 
-	initTheta := make([][][]float32, len(nn.Theta))
+	initTheta := make([][][]float64, len(nn.Theta))
 
 	for i := 0; i < len(nn.Theta); i++ {
-		initTheta[i] = make([][]float32, len(nn.Theta[i]))
+		initTheta[i] = make([][]float64, len(nn.Theta[i]))
 		for j := 0; j < len(nn.Theta); j++ {
-			initTheta[i][j] = make([]float32, len(nn.Theta[i][j]))
+			initTheta[i][j] = make([]float64, len(nn.Theta[i][j]))
 			for k := 0; k < len(nn.Theta); k++ {
 				initTheta[i][j][k] = nn.Theta[i][j][k]
 			}
@@ -40,7 +39,7 @@ func TestRollUnroll(t *testing.T) {
 		}
 	}
 
-}*/
+}
 
 // Using a predefined dataset stored in test_data/test_linear.dat, calculates
 // the cost and gradient for different lambda y theta
@@ -52,7 +51,7 @@ func TestNeuralNet(t *testing.T) {
 		[]string{"test_data/nn/initial_Theta1.csv", "test_data/nn/initial_Theta2.csv"},
 	)
 
-	fx, i, err := Fmincg(nn, 1, 100, true)
+	fx, i, err := Fmincg(nn, 1, 3, true)
 
 	if err != nil {
 		t.Error(err)
@@ -71,8 +70,7 @@ func TestNeuralNet(t *testing.T) {
 	}
 }
 
-/*
-func TestNeuralNetMinimizeCost(t *testing.T) {
+/*func TestNeuralNetMinimizeCost(t *testing.T) {
 	fmt.Println("Testing Neural Network training...")
 
 	nn := NewNeuralNetFromCsv(
@@ -117,5 +115,4 @@ func TestNeuralNetSaveLoad(t *testing.T) {
 	if j1 != j2 {
 		t.Error("The cost returned after store and read the Thetas from files, doesn't match with the initial theta")
 	}
-}
-*/
+}*/
