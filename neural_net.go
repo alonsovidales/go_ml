@@ -42,6 +42,7 @@ type NeuralNet struct {
 
 func (nn *NeuralNet) InitFmincg() {
 	mt.StartBufferingMem("nncost")
+	mt.FreeMem()
 
 	fmt.Println("X")
 	nn.cudaYtrans = mt.GetCudaMatrix(nn.Y).Trans()
