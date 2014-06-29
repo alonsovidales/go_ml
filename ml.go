@@ -29,10 +29,10 @@ import (
 // applied to all the elements is: (Xn - Avg) / (max - min) If all the elements
 // in the slice have the same values, or the slice is empty, the slice can't be
 // normalized, then returns false in the valid parameter
-func Normalize(values []float32) (norm []float32, valid bool) {
-	avg := float32(0.0)
-	max := float32(math.Inf(-1))
-	min := float32(math.Inf(1))
+func Normalize(values []float64) (norm []float64, valid bool) {
+	avg := float64(0.0)
+	max := float64(math.Inf(-1))
+	min := float64(math.Inf(1))
 	for _, val := range values {
 		avg += val
 		if val < min {
@@ -49,7 +49,7 @@ func Normalize(values []float32) (norm []float32, valid bool) {
 	}
 
 	valid = true
-	avg /= float32(len(values))
+	avg /= float64(len(values))
 	for _, val := range values {
 		norm = append(norm, (val-avg)/(max-min))
 	}
@@ -63,13 +63,13 @@ func Normalize(values []float32) (norm []float32, valid bool) {
 // 1, x1, x2, x1 * x2, x1 ** 2, x2 ** 2, (x1 * x2) ** 2
 // Use this method with care in order to calculate the model who fits better with
 // the problem
-func MapFeatures(x [][]float32, degree int) (ret [][]float32) {
-	ret = make([][]float32, len(x))
+func MapFeatures(x [][]float64, degree int) (ret [][]float64) {
+	ret = make([][]float64, len(x))
 	elems := len(x[0])
 	for i := 0; i < len(x); i++ {
-		aux := make([]float32, len(x[i]))
+		aux := make([]float64, len(x[i]))
 		copy(aux, x[i])
-		ret[i] = make([]float32, len(x[i]))
+		ret[i] = make([]float64, len(x[i]))
 		copy(ret[i], x[i])
 
 		for l := 2; l <= elems; l++ {
@@ -91,13 +91,13 @@ func MapFeatures(x [][]float32, degree int) (ret [][]float32) {
 // Prepared at the power of 2 (x = 2):
 //    1 3  9 4 16
 //    1 5 25 8 64
-func PrepareX(x [][]float32, degree int) (newX [][]float32) {
+func PrepareX(x [][]float64, degree int) (newX [][]float64) {
 	for _, values := range x {
-		result := []float32{1}
+		result := []float64{1}
 
 		for _, value := range values {
 			for calcDeg := 1; calcDeg <= degree; calcDeg++ {
-				result = append(result, float32(math.Pow(float64(value), float64(calcDeg))))
+				result = append(result, float64(math.Pow(float64(value), float64(calcDeg))))
 			}
 		}
 
@@ -109,7 +109,7 @@ func PrepareX(x [][]float32, degree int) (newX [][]float32) {
 
 // multElems returns the result of multiply all the elements contained on the
 // slice
-func multElems(elems []float32) (resilt float32) {
+func multElems(elems []float64) (resilt float64) {
 	resilt = 1
 	for _, elem := range elems {
 		resilt *= elem
@@ -120,7 +120,7 @@ func multElems(elems []float32) (resilt float32) {
 
 // combinations Returns a slice with all the possible combinations of lenght "r"
 // of the elements contained in the slice "iterable"
-func combinations(iterable []float32, r int) (results []float32) {
+func combinations(iterable []float64, r int) (results []float64) {
 	pool := iterable
 	n := len(pool)
 
@@ -133,7 +133,7 @@ func combinations(iterable []float32, r int) (results []float32) {
 		indices[i] = i
 	}
 
-	result := make([]float32, r)
+	result := make([]float64, r)
 	for i, el := range indices {
 		result[i] = pool[el]
 	}
@@ -164,21 +164,21 @@ func combinations(iterable []float32, r int) (results []float32) {
 // Auxiliar functions to work with matrix elements
 
 // neg returns the negation of the given float
-func neg(n float32) float32 {
+func neg(n float64) float64 {
 	return -n
 }
 
 // sigmoid calculates the sigmoid funcion for logistic regression
-func sigmoid(z float32) float32 {
-	return 1 / (1 + float32(math.Pow(math.E, float64(neg(z)))))
+func sigmoid(z float64) float64 {
+	return 1 / (1 + float64(math.Pow(math.E, float64(neg(z)))))
 }
 
 // oneMinus returns one minus the given float
-func oneMinus(x float32) float32 {
+func oneMinus(x float64) float64 {
 	return 1 - x
 }
 
 // powTwo returns the number at the power of two
-func powTwo(x float32) float32 {
+func powTwo(x float64) float64 {
 	return x * x
 }
