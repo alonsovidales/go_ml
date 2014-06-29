@@ -167,7 +167,7 @@ func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, gra
 		j += theta.RemoveBiasTo(nn.removeBiasThetaBuff[i]).PowTwo().SumAll() * (lambda / (2*float64(m)))
 	}
 	//log.Println("INIT COST6")
-	fmt.Println("J:", j)
+	//fmt.Println("J:", j)
 
 	if !calcGrad {
 		return
@@ -225,7 +225,7 @@ func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, gra
 			nn.gradBuff[i],
 			thetas[i].SetBiasToZero().MultBy(lambda / float64(m)), nn.gradBuff[i]).GetMatrixFromCuda()
 	}
-	fmt.Println("Grad:", 1, mt.SumAll([][]float64{nn.gradBuff[1].GetMatrixFromCuda()[0]}))
+	//fmt.Println("Grad:", 1, mt.SumAll([][]float64{nn.gradBuff[1].GetMatrixFromCuda()[0]}))
 	//log.Println("END COST")
 
 	nn.buffInitted = true

@@ -135,8 +135,7 @@ func Fmincg(nn DataSet, lambda float64, length int, verbose bool) (fx []float64,
 				z1 += z2                                        // update the step
 				x = mt.Sum(x, mt.MultBy(s, float64(z2)))
 				nn.setTheta(nn.unrollThetasGrad(x))
-				f2tmp, df2Temp, _ = nn.CostFunction(float64(lambda), true)
-				f2 := float64(f2tmp)
+				f2, df2Temp, _ = nn.CostFunction(float64(lambda), true)
 				df2 = nn.rollThetasGrad(df2Temp)
 				if f2 < minCost {
 					bestTheta = nn.getTheta()

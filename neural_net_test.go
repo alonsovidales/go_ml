@@ -52,7 +52,7 @@ func TestNeuralNet(t *testing.T) {
 		[]string{"test_data/nn/initial_Theta1.csv", "test_data/nn/initial_Theta2.csv"},
 	)
 
-	fx, i, err := Fmincg(nn, 1, 3, true)
+	fx, i, err := Fmincg(nn, 1, 100, true)
 
 	if err != nil {
 		t.Error(err)
