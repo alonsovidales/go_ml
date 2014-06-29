@@ -44,10 +44,8 @@ func (nn *NeuralNet) InitFmincg() {
 	mt.StartBufferingMem("nncost")
 	mt.FreeMem()
 
-	fmt.Println("X")
 	nn.cudaYtrans = mt.GetCudaMatrix(nn.Y).Trans()
 	nn.cudaXtransBias = mt.GetCudaMatrix(nn.X).Trans().AddBiasTop()
-	fmt.Println("END X")
 
 	mt.SetDefaultBuff()
 }
@@ -87,7 +85,6 @@ func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, gra
 		nn.copyBuffTheta = make([]*mt.CudaMatrix, len(nn.Theta))
 		for i := 0; i < len(nn.Theta) - 1; i++ {
 			nn.copyBuffTheta[i] = &mt.CudaMatrix{}
-			fmt.Println("Theta1", i)
 		}
 	}
 	//fmt.Println("Theta1")
@@ -159,7 +156,6 @@ func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, gra
 	}
 	j = nn.subJBuff.SumAll() / float64(m)
 
-	fmt.Println("J:", j)
 
 	if !nn.buffInitted {
 		nn.removeBiasThetaBuff = make([]*mt.CudaMatrix, len(nn.Theta))
@@ -171,6 +167,11 @@ func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, gra
 		j += theta.RemoveBiasTo(nn.removeBiasThetaBuff[i]).PowTwo().SumAll() * (lambda / (2*float64(m)))
 	}
 	//log.Println("INIT COST6")
+	fmt.Println("J:", j)
+
+	if !calcGrad {
+		return
+	}
 
 	if !nn.buffInitted {
 		nn.dBuff = make([]*mt.CudaMatrix, len(nn.Theta))
@@ -209,7 +210,6 @@ func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, gra
 		mt.CudaMultTransTo(nn.dBuff[len(thetas)-1].MultBy(1/float64(m)), nn.aBuff[len(thetas)-1], nn.gradBuff[len(thetas)-1])
 	}
 	//log.Println("INIT COST8")
-	grad[len(thetas)-1] = nn.gradBuff[len(thetas)-1].GetMatrixFromCuda()
 	for i := len(nn.Theta)-2; i >= 0; i-- {
 		if !nn.buffInitted {
 			nn.gradRemoveBiasBuff[i] = nn.dBuff[i].RemoveBiasTop()
@@ -217,11 +217,19 @@ func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, gra
 		} else {
 			mt.CudaMultTransTo(nn.dBuff[i].RemoveBiasTopTo(nn.gradRemoveBiasBuff[i]).MultBy(1/float64(m)), nn.aBuff[i], nn.gradBuff[i])
 		}
-		grad[i] = nn.gradBuff[i].GetMatrixFromCuda()
 	}
+
+	// Gradient regularization
+	for i := len(nn.Theta)-1; i >= 0; i-- {
+		grad[i] = mt.CudaSumTo(
+			nn.gradBuff[i],
+			thetas[i].SetBiasToZero().MultBy(lambda / float64(m)), nn.gradBuff[i]).GetMatrixFromCuda()
+	}
+	fmt.Println("Grad:", 1, mt.SumAll([][]float64{nn.gradBuff[1].GetMatrixFromCuda()[0]}))
 	//log.Println("END COST")
 
 	nn.buffInitted = true
+	//fmt.Println(grad[0])
 
 	//fmt.Println("SUM:", mt.SumAll([][]float64{grad[1][0]}))
 
