@@ -4,7 +4,7 @@ import (
 	"testing"
 	"fmt"
 )
-
+/*
 func TestRollUnroll(t *testing.T) {
 	fmt.Println("Testing Roll & Unroll neural networks...")
 	nn := NewNeuralNetFromCsv(
@@ -39,7 +39,7 @@ func TestRollUnroll(t *testing.T) {
 		}
 	}
 
-}
+}*/
 
 // Using a predefined dataset stored in test_data/test_linear.dat, calculates
 // the cost and gradient for different lambda y theta
@@ -48,7 +48,11 @@ func TestNeuralNet(t *testing.T) {
 	nn := NewNeuralNetFromCsv(
 		"test_data/nn/x.csv",
 		"test_data/nn/y.csv",
-		[]string{"test_data/nn/initial_Theta1.csv", "test_data/nn/initial_Theta2.csv"},
+		[]string{
+			"test_data/nn/initial_Theta1.csv",
+			"test_data/nn/initial_Theta2.csv",
+			"test_data/nn/initial_Theta2.csv",
+		},
 	)
 
 	fx, i, err := Fmincg(nn, 1, 3, true)
