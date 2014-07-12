@@ -2,7 +2,6 @@ package ml
 
 import (
 	"fmt"
-	"log"
 	"github.com/alonsovidales/go_matrix"
 	"io/ioutil"
 	"math"
@@ -22,11 +21,12 @@ type NeuralNet struct {
 	Y [][]float64
 	cudaYtrans *mt.CudaMatrix
 	// 1st dim -> layer, 2nd dim -> neuron, 3rd dim theta
-	Theta [][][]float64
+	Theta []*mt.CudaMatrix
 
 	zBuff []*mt.CudaMatrix
 	aBuff []*mt.CudaMatrix
 	dBuff []*mt.CudaMatrix
+	buffTheta []*mt.CudaMatrix
 	gradRemoveBiasBuff []*mt.CudaMatrix
 	gradBuff []*mt.CudaMatrix
 	copyBuffTheta []*mt.CudaMatrix
@@ -59,46 +59,19 @@ func (nn *NeuralNet) InitFmincg() {
 // coefficients of them will be zero)
 // The calcGrad param in case of true calculates the gradient in addition of the
 // cost, and in case of false, only calculates the cost
-func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, grad [][][]float64, err error) {
-	if len(nn.Y) == 0 || len(nn.X) == 0 || len(nn.Theta) == 0 {
-		err = fmt.Errorf("the lenght of the X, Y or Theta params are zero")
-		return
-	}
-
-	if len(nn.Y) != len(nn.X) {
-		err = fmt.Errorf(
-			"the length of the X parameter doesn't corresponds with the length of the Y parameter")
-		return
-	}
-
-	if len(nn.Theta[len(nn.Theta)-1]) != len(nn.Y[0]) {
-		err = fmt.Errorf(
-			"the length of the last theta layer should to correspond with the length of the expected results")
-		return
-	}
-
-	mt.FreeMem()
+func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, grad []*mt.CudaMatrix, err error) {
 	mt.StartBufferingMem("nncost")
 	defer mt.SetDefaultBuff()
-	//log.Println("-------- INIT COST --------")
 
-	//fmt.Println("Theta")
 	if !nn.buffInitted {
 		nn.copyBuffTheta = make([]*mt.CudaMatrix, len(nn.Theta))
+		nn.buffTheta = make([]*mt.CudaMatrix, len(nn.Theta))
 		for i := 0; i < len(nn.Theta) - 1; i++ {
 			nn.copyBuffTheta[i] = &mt.CudaMatrix{}
+			nn.buffTheta[i] = &mt.CudaMatrix{}
 		}
+		nn.buffTheta[len(nn.Theta) - 1] = &mt.CudaMatrix{}
 	}
-	//fmt.Println("Theta1")
-
-	thetas := make([]*mt.CudaMatrix, len(nn.Theta))
-	for i := 0; i < len(nn.Theta); i++ {
-		//fmt.Println("Theta2", i, len(nn.Theta[i]), len(nn.Theta[i][0]))
-		thetas[i] = mt.GetCudaMatrix(nn.Theta[i])
-		//fmt.Println("Theta22", i)
-		defer thetas[i].Free()
-	}
-	//fmt.Println("END Theta")
 	m := len(nn.X)
 	y := nn.cudaYtrans
 
@@ -113,23 +86,19 @@ func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, gra
 	//log.Println("INIT COST2")
 	for i := 0; i < len(nn.Theta) - 1; i++ {
 		if nn.buffInitted {
-			//log.Println("INIT COST22")
-			mt.CudaMultTo(thetas[i], nn.aBuff[i], nn.zBuff[i])
-			///log.Println("INIT COST23")
-			nn.zBuff[i].CudaCopyTo(nn.copyBuffTheta[i]).Sigmoid().AddBiasTopTo(nn.aBuff[i+1])
-			//log.Println("INIT COST24")
+			mt.CudaMultTo(nn.Theta[i], nn.aBuff[i], nn.zBuff[i])
+			nn.zBuff[i].CopyTo(nn.copyBuffTheta[i]).Sigmoid().AddBiasTopTo(nn.aBuff[i+1])
 		} else {
-			nn.zBuff[i] = mt.CudaMult(thetas[i], nn.aBuff[i])
-			nn.aBuff[i+1] = nn.zBuff[i].CudaCopyTo(nn.copyBuffTheta[i]).Sigmoid().AddBiasTop()
+			nn.zBuff[i] = mt.CudaMult(nn.Theta[i], nn.aBuff[i])
+			nn.aBuff[i+1] = nn.zBuff[i].CopyTo(nn.copyBuffTheta[i]).Sigmoid().AddBiasTop()
 		}
 	}
-	//log.Println("INIT COST31")
+
 	if nn.buffInitted {
-		mt.CudaMultTo(thetas[len(thetas) - 1], nn.aBuff[len(thetas) - 1], nn.aBuff[len(thetas)]).Sigmoid()
+		mt.CudaMultTo(nn.Theta[len(nn.Theta) - 1], nn.aBuff[len(nn.Theta) - 1], nn.aBuff[len(nn.Theta)]).Sigmoid()
 	} else {
-		nn.aBuff[len(thetas)] = mt.CudaMult(thetas[len(thetas) - 1], nn.aBuff[len(thetas) - 1]).Sigmoid()
+		nn.aBuff[len(nn.Theta)] = mt.CudaMult(nn.Theta[len(nn.Theta) - 1], nn.aBuff[len(nn.Theta) - 1]).Sigmoid()
 	}
-	//log.Println("INIT COST41")
 
 	if !nn.buffInitted {
 		nn.copyBuff = make([]*mt.CudaMatrix, 4)
@@ -137,22 +106,19 @@ func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, gra
 			nn.copyBuff[i] = &mt.CudaMatrix{}
 		}
 		nn.cudaMultAllElemsBuff = []*mt.CudaMatrix{
-			mt.CudaMultAllElems(y.CudaCopyTo(nn.copyBuff[0]).Neg(), nn.aBuff[len(nn.Theta)].CudaCopyTo(nn.copyBuff[1]).Log()),
-			mt.CudaMultAllElems(y.CudaCopyTo(nn.copyBuff[2]).OneMinus(), nn.aBuff[len(nn.Theta)].CudaCopyTo(nn.copyBuff[3]).OneMinus().Log()),
+			mt.CudaMultAllElems(y.CopyTo(nn.copyBuff[0]).Neg(), nn.aBuff[len(nn.Theta)].CopyTo(nn.copyBuff[1]).Log()),
+			mt.CudaMultAllElems(y.CopyTo(nn.copyBuff[2]).OneMinus(), nn.aBuff[len(nn.Theta)].CopyTo(nn.copyBuff[3]).OneMinus().Log()),
 		}
 		nn.subJBuff = mt.CudaSub(
 			nn.cudaMultAllElemsBuff[0],
 			nn.cudaMultAllElemsBuff[1])
 	} else {
-		mt.CudaMultAllElemsTo(y.CudaCopyTo(nn.copyBuff[0]).Neg(), nn.aBuff[len(nn.Theta)].CudaCopyTo(nn.copyBuff[1]).Log(), nn.cudaMultAllElemsBuff[0])
-		//log.Println("INIT COST42")
-		mt.CudaMultAllElemsTo(y.CudaCopyTo(nn.copyBuff[2]).OneMinus(), nn.aBuff[len(nn.Theta)].CudaCopyTo(nn.copyBuff[3]).OneMinus().Log(), nn.cudaMultAllElemsBuff[1])
-		//log.Println("INIT COST43")
+		mt.CudaMultAllElemsTo(y.CopyTo(nn.copyBuff[0]).Neg(), nn.aBuff[len(nn.Theta)].CopyTo(nn.copyBuff[1]).Log(), nn.cudaMultAllElemsBuff[0])
+		mt.CudaMultAllElemsTo(y.CopyTo(nn.copyBuff[2]).OneMinus(), nn.aBuff[len(nn.Theta)].CopyTo(nn.copyBuff[3]).OneMinus().Log(), nn.cudaMultAllElemsBuff[1])
 		mt.CudaSubTo(
 			nn.cudaMultAllElemsBuff[0],
 			nn.cudaMultAllElemsBuff[1],
 			nn.subJBuff)
-		//log.Println("INIT COST44")
 	}
 	j = nn.subJBuff.SumAll() / float64(m)
 
@@ -161,16 +127,12 @@ func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, gra
 	}
 
 	// Regularization
-	for i, theta := range thetas {
+	for i, theta := range nn.Theta {
 		if !nn.buffInitted {
 			nn.removeBiasThetaBuff[i] = &mt.CudaMatrix{}
 		}
 		j += theta.RemoveBiasTo(nn.removeBiasThetaBuff[i]).PowTwo().SumAll() * (lambda / (2*float64(m)))
 	}
-	//log.Println("INIT COST6")
-	//fmt.Println("J:", j)
-
-	fmt.Println("J:", j)
 
 	if !calcGrad {
 		return
@@ -181,11 +143,11 @@ func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, gra
 		nn.dBuffMult = make([]*mt.CudaMatrix, len(nn.Theta))
 		nn.biasTopThetaBuff = make([]*mt.CudaMatrix, len(nn.Theta)-1)
 		nn.thetaTransBuff = make([]*mt.CudaMatrix, len(nn.Theta)-1)
-		nn.gradRemoveBiasBuff = make([]*mt.CudaMatrix, len(thetas))
+		nn.gradRemoveBiasBuff = make([]*mt.CudaMatrix, len(nn.Theta))
 
-		nn.dBuff[len(nn.Theta)-1] = mt.CudaSub(nn.aBuff[len(thetas)], y)
+		nn.dBuff[len(nn.Theta)-1] = mt.CudaSub(nn.aBuff[len(nn.Theta)], y)
 	} else {
-		mt.CudaSubTo(nn.aBuff[len(thetas)], y, nn.dBuff[len(nn.Theta)-1])
+		mt.CudaSubTo(nn.aBuff[len(nn.Theta)], y, nn.dBuff[len(nn.Theta)-1])
 	}
 	nn.gradRemoveBiasBuff[len(nn.Theta)-1] = nn.dBuff[len(nn.Theta)-1]
 
@@ -194,13 +156,13 @@ func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, gra
 			nn.copyBuff[i] = &mt.CudaMatrix{}
 			nn.dBuff[i] = &mt.CudaMatrix{}
 			nn.thetaTransBuff[i] = &mt.CudaMatrix{}
-			nn.dBuffMult[i] = mt.CudaMult(thetas[i + 1].TransTo(nn.thetaTransBuff[i]), nn.dBuff[i+1])
+			nn.dBuffMult[i] = mt.CudaMult(nn.Theta[i + 1].TransTo(nn.thetaTransBuff[i]), nn.dBuff[i+1])
 			nn.dBuff[i] = mt.CudaMultAllElems(
 				nn.dBuffMult[i],
 				nn.zBuff[i].SigmoidGradient().AddBiasTopTo(nn.dBuff[i]))
 			nn.gradRemoveBiasBuff[i] = nn.dBuff[i].RemoveBiasTop()
 		} else {
-			mt.CudaMultTo(thetas[i + 1].TransTo(nn.thetaTransBuff[i]), nn.dBuff[i+1], nn.dBuffMult[i])
+			mt.CudaMultTo(nn.Theta[i + 1].TransTo(nn.thetaTransBuff[i]), nn.dBuff[i+1], nn.dBuffMult[i])
 			mt.CudaMultAllElemsTo(
 				nn.dBuffMult[i],
 				nn.zBuff[i].SigmoidGradient().AddBiasTopTo(nn.dBuff[i]),
@@ -208,13 +170,11 @@ func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, gra
 			nn.dBuff[i].RemoveBiasTopTo(nn.gradRemoveBiasBuff[i])
 		}
 	}
-	//log.Println("INIT COST7")
 
 	// Back Propagation
 	if !nn.buffInitted {
-		nn.gradBuff = make([]*mt.CudaMatrix, len(thetas))
+		nn.gradBuff = make([]*mt.CudaMatrix, len(nn.Theta))
 	}
-	//log.Println("INIT COST8")
 	for i := len(nn.Theta)-1; i >= 0; i-- {
 		if !nn.buffInitted {
 			nn.gradBuff[i] = mt.CudaMultTrans(nn.gradRemoveBiasBuff[i].MultBy(1/float64(m)), nn.aBuff[i])
@@ -222,29 +182,21 @@ func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, gra
 			mt.CudaMultTransTo(nn.gradRemoveBiasBuff[i].MultBy(1/float64(m)), nn.aBuff[i], nn.gradBuff[i])
 		}
 
-		//fmt.Println("D:", i, nn.gradBuff[i].GetMatrixFromCuda())
 	}
 
-	grad = make([][][]float64, len(thetas))
+	grad = nn.gradBuff
+
 	// Gradient regularization
-	for i := len(nn.Theta)-1; i >= 0; i-- {
-		if lambda > 0 {
-			grad[i] = mt.CudaSumTo(
+	if lambda > 0 {
+		for i := len(nn.Theta)-1; i >= 0; i-- {
+			mt.CudaSumTo(
 				nn.gradBuff[i],
-				thetas[i].SetBiasToZero().MultBy(lambda / float64(m)), nn.gradBuff[i]).GetMatrixFromCuda()
-		} else {
-			grad[i] = nn.gradBuff[i].GetMatrixFromCuda()
+				nn.Theta[i].CopyTo(nn.buffTheta[i]).SetBiasToZero().MultBy(lambda / float64(m)),
+				nn.gradBuff[i])
 		}
-		//fmt.Println("Grad:", i, grad[i][0])
 	}
-	//fmt.Println("Grad:", 1, mt.SumAll([][]float64{nn.gradBuff[1].GetMatrixFromCuda()[0]}))
-	//log.Println("END COST")
 
 	nn.buffInitted = true
-	//fmt.Println(grad[0])
-
-	//fmt.Println("SUM:", mt.SumAll([][]float64{grad[1][0]}))
-	//log.Println("-------- END COST --------")
 
 	return
 }
@@ -287,14 +239,20 @@ func (nn *NeuralNet) GetPerformance(verbose bool) (cost float64, performance flo
 // Hipotesis returns the hipotesis calculation for the sample "x" using the
 // thetas of nn.Theta
 func (nn *NeuralNet) Hipotesis(x []float64) (result []float64) {
-	aux := [][]float64{x}
+	mt.StartBufferingMem("nnhipotesis")
+	defer func() {
+		mt.SetDefaultBuff()
+		mt.FreeMem()
+	}()
+
+	aux := mt.GetCudaMatrix([][]float64{x})
 
 	for _, theta := range nn.Theta {
-		aux = mt.Apply(mt.Mult(addBias(aux), mt.Trans(theta)), sigmoid)
+		aux = mt.CudaMultTrans(aux.AddBias(), theta).Sigmoid()
 	}
 	mt.FreeMem()
 
-	return aux[0]
+	return aux.GetMatrixFromCuda()[0]
 }
 
 // InitializeThetas Random inizialization of the thetas to break the simetry.
@@ -302,23 +260,29 @@ func (nn *NeuralNet) Hipotesis(x []float64) (result []float64) {
 // be initialized, the first layer is the input one, and last layer will
 // correspond to the output layer
 func (nn *NeuralNet) InitializeThetas(layerSizes []int) {
+	mt.StartBufferingMem("nninitialize")
+	defer func() {
+		mt.SetDefaultBuff()
+		mt.FreeMem()
+	}()
+
+	nn.Theta = make([]*mt.CudaMatrix, len(layerSizes) - 1)
 	rand.Seed(int64(time.Now().Nanosecond()))
 	epsilon := float64(math.Sqrt(6) / math.Sqrt(float64(layerSizes[0]+layerSizes[len(layerSizes)-1])))
 
-	nn.Theta = make([][][]float64, len(layerSizes)-1)
-
 	for l := 1; l < len(layerSizes); l++ {
-		nn.Theta[l-1] = make([][]float64, layerSizes[l])
+		auxTheta := make([][]float64, layerSizes[l])
 		for n := 0; n < layerSizes[l]; n++ {
-			nn.Theta[l-1][n] = make([]float64, layerSizes[l-1]+1)
+			auxTheta[n] = make([]float64, layerSizes[l-1]+1)
 			for i := 0; i < layerSizes[l-1]+1; i++ {
 				if rand.Float64() > 0.5 {
-					nn.Theta[l-1][n][i] = (rand.Float64() * epsilon)
+					auxTheta[n][i] = (rand.Float64() * epsilon)
 				} else {
-					nn.Theta[l-1][n][i] = 0 - (rand.Float64() * epsilon)
+					auxTheta[n][i] = 0 - (rand.Float64() * epsilon)
 				}
 			}
 		}
+		nn.Theta[l-1] = mt.GetCudaMatrix(auxTheta)
 	}
 
 	return
@@ -333,7 +297,7 @@ func (nn *NeuralNet) InitializeThetas(layerSizes []int) {
 // sets and trains the neural network with the 80% of the samples.
 // The data can be shuffled in order to obtain a better distribution before
 // divide it in groups
-func (nn *NeuralNet) MinimizeCost(maxIters int, suffleData bool, verbose bool) (finalCost float64, performance float64, trainingData *NeuralNet, testData *NeuralNet) {
+/*func (nn *NeuralNet) MinimizeCost(maxIters int, suffleData bool, verbose bool) (finalCost float64, performance float64, trainingData *NeuralNet, testData *NeuralNet) {
 
 	lambdas := []float64{0.0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300}
 
@@ -401,7 +365,7 @@ func (nn *NeuralNet) MinimizeCost(maxIters int, suffleData bool, verbose bool) (
 	finalCost, performance = testData.GetPerformance(verbose)
 
 	return
-}
+}*/
 
 // NewNeuralNetFromCsv Loads the informaton contained in the specified file
 // paths and returns a NeuralNet instance.
@@ -413,6 +377,12 @@ func (nn *NeuralNet) MinimizeCost(maxIters int, suffleData bool, verbose bool) (
 // In case of need only to load the theta paramateres, specify a empty string on
 // the xSrc and ySrc parameters.
 func NewNeuralNetFromCsv(xSrc string, ySrc string, thetaSrc []string) (result *NeuralNet) {
+	mt.StartBufferingMem("nnfromcsv")
+	defer func() {
+		mt.SetDefaultBuff()
+		mt.FreeMem()
+	}()
+
 	result = new(NeuralNet)
 
 	if xSrc != "" {
@@ -490,7 +460,7 @@ func NewNeuralNetFromCsv(xSrc string, ySrc string, thetaSrc []string) (result *N
 			theta = append(theta, values)
 		}
 
-		result.Theta = append(result.Theta, theta)
+		result.Theta = append(result.Theta, mt.GetCudaMatrix(theta))
 	}
 
 	return
@@ -503,10 +473,11 @@ func NewNeuralNetFromCsv(xSrc string, ySrc string, thetaSrc []string) (result *N
 func (nn *NeuralNet) SaveThetas(targetDir string) (files []string) {
 	fileCont := make([]string, len(nn.Theta))
 	for i := 0; i < len(nn.Theta); i++ {
-		for j := 0; j < len(nn.Theta[i]); j++ {
+		auxTheta := nn.Theta[i].GetMatrixFromCuda()
+		for j := 0; j < len(auxTheta); j++ {
 			s := []string{}
-			for k := 0; k < len(nn.Theta[i][j]); k++ {
-				s = append(s, strconv.FormatFloat(float64(nn.Theta[i][j][k]), 'e', -1, 32))
+			for k := 0; k < len(auxTheta[j]); k++ {
+				s = append(s, strconv.FormatFloat(float64(auxTheta[j][k]), 'e', -1, 32))
 			}
 
 			fileCont[i] += strings.Join(s, " ") + "\n"
@@ -520,18 +491,6 @@ func (nn *NeuralNet) SaveThetas(targetDir string) (files []string) {
 			files[i],
 			[]byte(fileCont[i]),
 			0644)
-	}
-
-	return
-}
-
-// addBias Returns a copy of the "m" two dim slice with a one added at the
-// beginning of each row
-func addBias(m [][]float64) (result [][]float64) {
-	result = make([][]float64, len(m))
-
-	for i := 0; i < len(m); i++ {
-		result[i] = append([]float64{1}, m[i]...)
 	}
 
 	return
@@ -554,7 +513,7 @@ func copyTheta(theta [][][]float64) (copyTheta [][][]float64) {
 	return
 }
 
-func (nn *NeuralNet) getTheta() [][][]float64 {
+func (nn *NeuralNet) getTheta() []*mt.CudaMatrix {
 	return nn.Theta
 }
 
@@ -569,21 +528,7 @@ func removeBias(x [][]float64) (result [][]float64) {
 	return
 }
 
-// rollThetasGrad returns a 1 x n matrix with the thetas concatenated
-func (nn *NeuralNet) rollThetasGrad(x [][][]float64) [][]float64 {
-	result := []float64{}
-	for i := 0; i < len(x); i++ {
-		for j := 0; j < len(x[i][0]); j++ {
-			for k := 0; k < len(x[i]); k++ {
-				result = append(result, x[i][k][j])
-			}
-		}
-	}
-
-	return [][]float64{result}
-}
-
-func (nn *NeuralNet) setTheta(t [][][]float64) {
+func (nn *NeuralNet) setTheta(t []*mt.CudaMatrix) {
 	nn.Theta = t
 }
 
@@ -623,21 +568,29 @@ func sigmoidGradient(x float64) float64 {
 }
 
 // unrollThetasGrad Returns the 1 x n matrix as the multilayer theta way
-func (nn *NeuralNet) unrollThetasGrad(x [][]float64) (r [][][]float64) {
+func (nn *NeuralNet) setRolledThetas(x *mt.CudaMatrix) {
+	aux := x.GetMatrixFromCuda()
 	pos := 0
-	r = make([][][]float64, len(nn.Theta))
 	for i := 0; i < len(nn.Theta); i++ {
-		r[i] = make([][]float64, len(nn.Theta[i]))
-		for j := 0; j < len(nn.Theta[i]); j++ {
-			r[i][j] = make([]float64, len(nn.Theta[i][j]))
+		auxTheta := make([][]float64, nn.Theta[i].H())
+		for r := 0; r < nn.Theta[i].H(); r++ {
+			auxTheta[r] = aux[0][pos:pos+nn.Theta[i].W()]
+			pos += nn.Theta[i].W()
 		}
-		for j := 0; j < len(nn.Theta[i][0]); j++ {
-			for k := 0; k < len(nn.Theta[i]); k++ {
-				r[i][k][j] = x[0][pos]
-				pos++
-			}
+		mt.MoveToCuda(auxTheta, nn.Theta[i])
+	}
+}
+
+// rollThetasGrad returns a 1 x n matrix with the thetas concatenated
+func (nn *NeuralNet) rollThetasGradTo(x []*mt.CudaMatrix, to *mt.CudaMatrix) *mt.CudaMatrix {
+	aux := []float64{}
+	for i := 0; i < len(x); i++ {
+		xAux := x[i].GetMatrixFromCuda()
+		for r := 0; r < len(xAux); r++ {
+			aux = append(aux, xAux[r]...)
 		}
 	}
 
-	return
+	mt.MoveToCuda([][]float64{aux}, to)
+	return to
 }

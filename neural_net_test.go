@@ -2,9 +2,10 @@ package ml
 
 import (
 	"testing"
+	"github.com/alonsovidales/go_matrix"
 	"fmt"
 )
-/*
+
 func TestRollUnroll(t *testing.T) {
 	fmt.Println("Testing Roll & Unroll neural networks...")
 	nn := NewNeuralNetFromCsv(
@@ -13,33 +14,28 @@ func TestRollUnroll(t *testing.T) {
 		[]string{},
 	)
 
-	nn.InitializeThetas([]int{400, 50, 10})
+	nn.InitializeThetas([]int{4, 5, 10})
 
 	initTheta := make([][][]float64, len(nn.Theta))
 
 	for i := 0; i < len(nn.Theta); i++ {
-		initTheta[i] = make([][]float64, len(nn.Theta[i]))
-		for j := 0; j < len(nn.Theta); j++ {
-			initTheta[i][j] = make([]float64, len(nn.Theta[i][j]))
-			for k := 0; k < len(nn.Theta); k++ {
-				initTheta[i][j][k] = nn.Theta[i][j][k]
-			}
-		}
+		initTheta[i] = nn.Theta[i].GetMatrixFromCuda()
 	}
 
-	finalTheta := nn.unrollThetasGrad(nn.rollThetasGrad(nn.Theta))
+	nn.setRolledThetas(nn.rollThetasGradTo(nn.Theta, new(mt.CudaMatrix)))
 
 	for i := 0; i < len(nn.Theta); i++ {
-		for j := 0; j < len(nn.Theta); j++ {
-			for k := 0; k < len(nn.Theta); k++ {
-				if finalTheta[i][j][k] != initTheta[i][j][k] {
-					t.Error("Theta val after roll and unroll: ", finalTheta[i][j][k], "init theta:", initTheta[i][j][k], "pos:", i, j, k)
+		final := nn.Theta[i].GetMatrixFromCuda()
+		for r := 0; r < len(final); r++ {
+			for c := 0; c < len(final[0]); c++ {
+				if initTheta[i][r][c] != final[r][c] {
+					t.Error("The expected value in pos:", i, r, c, "is:", initTheta[i][r][c], "but", final[r][c], "obtained.")
 				}
 			}
 		}
 	}
 
-}*/
+}
 
 // Using a predefined dataset stored in test_data/test_linear.dat, calculates
 // the cost and gradient for different lambda y theta
@@ -50,7 +46,6 @@ func TestNeuralNet(t *testing.T) {
 		"test_data/nn/y.csv",
 		[]string{
 			"test_data/nn/initial_Theta1.csv",
-			"test_data/nn/initial_Theta2.csv",
 			"test_data/nn/initial_Theta2.csv",
 		},
 	)
