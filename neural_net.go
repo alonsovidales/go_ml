@@ -5,6 +5,7 @@ import (
 	"github.com/alonsovidales/go_matrix"
 	"io/ioutil"
 	"math"
+	"os"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -22,6 +23,7 @@ type NeuralNet struct {
 	cudaYtrans *mt.CudaMatrix
 	// 1st dim -> layer, 2nd dim -> neuron, 3rd dim theta
 	Theta []*mt.CudaMatrix
+	Namespace string
 
 	zBuff []*mt.CudaMatrix
 	aBuff []*mt.CudaMatrix
@@ -238,6 +240,30 @@ func (nn *NeuralNet) GetPerformance(verbose bool) (cost float64, performance flo
 
 // Hipotesis returns the hipotesis calculation for the sample "x" using the
 // thetas of nn.Theta
+func (nn *NeuralNet) MultHipotesis(x [][]float64) (result [][]float64) {
+	mt.StartBufferingMem("nnhipotesis")
+	defer func() {
+		mt.SetDefaultBuff()
+		mt.FreeMem()
+	}()
+
+	aBuff := make([]*mt.CudaMatrix, len(nn.Theta)+1)
+	zBuff := make([]*mt.CudaMatrix, len(nn.Theta)-1)
+
+	aBuff[0] = mt.GetCudaMatrix(x).Trans().AddBiasTop()
+
+	for i := 0; i < len(nn.Theta) - 1; i++ {
+		zBuff[i] = mt.CudaMult(nn.Theta[i], aBuff[i])
+		aBuff[i+1] = zBuff[i].Copy().Sigmoid().AddBiasTop()
+	}
+
+	aBuff[len(nn.Theta)] = mt.CudaMult(nn.Theta[len(nn.Theta) - 1], aBuff[len(nn.Theta) - 1]).Sigmoid()
+
+	return aBuff[len(nn.Theta)].TransOneDimMatrix().GetMatrixFromCuda()
+}
+
+// Hipotesis returns the hipotesis calculation for the sample "x" using the
+// thetas of nn.Theta
 func (nn *NeuralNet) Hipotesis(x []float64) (result []float64) {
 	mt.StartBufferingMem("nnhipotesis")
 	defer func() {
@@ -250,7 +276,6 @@ func (nn *NeuralNet) Hipotesis(x []float64) (result []float64) {
 	for _, theta := range nn.Theta {
 		aux = mt.CudaMultTrans(aux.AddBias(), theta).Sigmoid()
 	}
-	mt.FreeMem()
 
 	return aux.GetMatrixFromCuda()[0]
 }
@@ -376,7 +401,8 @@ func (nn *NeuralNet) InitializeThetas(layerSizes []int) {
 // layers.
 // In case of need only to load the theta paramateres, specify a empty string on
 // the xSrc and ySrc parameters.
-func NewNeuralNetFromCsv(xSrc string, ySrc string, thetaSrc []string) (result *NeuralNet) {
+func NewNeuralNetFromCsv(xSrc string, ySrc string, thetaSrc []string, cudeDev int) (result *NeuralNet) {
+	mt.SetDevice(cudeDev)
 	mt.StartBufferingMem("nnfromcsv")
 	defer func() {
 		mt.SetDefaultBuff()
@@ -471,6 +497,13 @@ func NewNeuralNetFromCsv(xSrc string, ySrc string, thetaSrc []string) (result *N
 // This method will create a file for each layer of theta called theta_X.txt
 // where X is the layer contained on the file.
 func (nn *NeuralNet) SaveThetas(targetDir string) (files []string) {
+	_, err := os.Stat(targetDir)
+	if os.IsNotExist(err) {
+		if os.MkdirAll(targetDir, 0777) != nil {
+			panic("The directory to store the thetas can't be created")
+		}
+	}
+
 	fileCont := make([]string, len(nn.Theta))
 	for i := 0; i < len(nn.Theta); i++ {
 		auxTheta := nn.Theta[i].GetMatrixFromCuda()
@@ -581,6 +614,10 @@ func (nn *NeuralNet) setRolledThetas(x *mt.CudaMatrix) {
 	}
 }
 
+func (nn *NeuralNet) CleanAllCudaMem() {
+	mt.FreeAllMem()
+}
+
 // rollThetasGrad returns a 1 x n matrix with the thetas concatenated
 func (nn *NeuralNet) rollThetasGradTo(x []*mt.CudaMatrix, to *mt.CudaMatrix) *mt.CudaMatrix {
 	aux := []float64{}
@@ -593,4 +630,8 @@ func (nn *NeuralNet) rollThetasGradTo(x []*mt.CudaMatrix, to *mt.CudaMatrix) *mt
 
 	mt.MoveToCuda([][]float64{aux}, to)
 	return to
+}
+
+func (nn *NeuralNet) SetDevice(dev int) {
+	mt.SetDevice(dev)
 }

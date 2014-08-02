@@ -12,6 +12,7 @@ func TestRollUnroll(t *testing.T) {
 		"test_data/nn/x.csv",
 		"test_data/nn/y.csv",
 		[]string{},
+		0,
 	)
 
 	nn.InitializeThetas([]int{4, 5, 10})
@@ -48,6 +49,7 @@ func TestNeuralNet(t *testing.T) {
 			"test_data/nn/initial_Theta1.csv",
 			"test_data/nn/initial_Theta2.csv",
 		},
+		0,
 	)
 
 	fx, i, err := Fmincg(nn, 1, 3, true)
