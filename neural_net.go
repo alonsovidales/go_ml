@@ -124,6 +124,8 @@ func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, gra
 	}
 	j = nn.subJBuff.SumAll() / float64(m)
 
+	//fmt.Println("J:", j)
+
 	if !nn.buffInitted {
 		nn.removeBiasThetaBuff = make([]*mt.CudaMatrix, len(nn.Theta))
 	}
@@ -187,6 +189,10 @@ func (nn *NeuralNet) CostFunction(lambda float64, calcGrad bool) (j float64, gra
 	}
 
 	grad = nn.gradBuff
+
+	/*for i, gr := range grad {
+		fmt.Println("GR:", i, gr.GetMatrixFromCuda())
+	}*/
 
 	// Gradient regularization
 	if lambda > 0 {
